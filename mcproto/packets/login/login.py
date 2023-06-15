@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import ClassVar, Optional, final
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from mcproto.buffer import Buffer
 from mcproto.packets.packet import ClientBoundPacket, GameState, ServerBoundPacket
@@ -36,11 +36,13 @@ class LoginStart(ServerBoundPacket):
         """
         self.username = username
 
+    @override
     def serialize(self) -> Buffer:
         buf = Buffer()
         buf.write_utf(self.username)
         return buf
 
+    @override
     @classmethod
     def deserialize(cls, buf: Buffer, /) -> Self:
         username = buf.read_utf()
@@ -64,6 +66,7 @@ class LoginEncryptionRequest(ClientBoundPacket):
         self.public_key = public_key
         self.verify_token = verify_token
 
+    @override
     def serialize(self) -> Buffer:
         buf = Buffer()
         buf.write_utf(" " * 20)  # Server ID - appears to be empty
@@ -71,6 +74,7 @@ class LoginEncryptionRequest(ClientBoundPacket):
         buf.write_bytearray(self.verify_token)
         return buf
 
+    @override
     @classmethod
     def deserialize(cls, buf: Buffer, /) -> Self:
         buf.read_utf()  # Server ID - appears to be empty
@@ -97,12 +101,14 @@ class LoginEncryptionResponse(ServerBoundPacket):
         self.shared_key = shared_key
         self.verify_token = verify_token
 
+    @override
     def serialize(self) -> Buffer:
         buf = Buffer()
         buf.write_bytearray(self.shared_key)
         buf.write_bytearray(self.verify_token)
         return buf
 
+    @override
     @classmethod
     def deserialize(cls, buf: Buffer, /) -> Self:
         shared_key = buf.read_bytearray()
@@ -127,12 +133,14 @@ class LoginSuccess(ClientBoundPacket):
         self.uuid = uuid
         self.username = username
 
+    @override
     def serialize(self) -> Buffer:
         buf = Buffer()
         buf.extend(self.uuid.serialize())
         buf.write_utf(self.username)
         return buf
 
+    @override
     @classmethod
     def deserialize(cls, buf: Buffer, /) -> Self:
         uuid = UUID.deserialize(buf)
@@ -155,9 +163,11 @@ class LoginDisconnect(ClientBoundPacket):
         """
         self.reason = reason
 
+    @override
     def serialize(self) -> Buffer:
         return self.reason.serialize()
 
+    @override
     @classmethod
     def deserialize(cls, buf: Buffer, /) -> Self:
         reason = ChatMessage.deserialize(buf)
@@ -183,6 +193,7 @@ class LoginPluginRequest(ClientBoundPacket):
         self.channel = channel
         self.data = data
 
+    @override
     def serialize(self) -> Buffer:
         buf = Buffer()
         buf.write_varint(self.message_id)
@@ -190,6 +201,7 @@ class LoginPluginRequest(ClientBoundPacket):
         buf.write(self.data)
         return buf
 
+    @override
     @classmethod
     def deserialize(cls, buf: Buffer, /) -> Self:
         message_id = buf.read_varint()
@@ -215,12 +227,14 @@ class LoginPluginResponse(ServerBoundPacket):
         self.message_id = message_id
         self.data = data
 
+    @override
     def serialize(self) -> Buffer:
         buf = Buffer()
         buf.write_varint(self.message_id)
         buf.write_optional(self.data, buf.write)
         return buf
 
+    @override
     @classmethod
     def deserialize(cls, buf: Buffer, /) -> Self:
         message_id = buf.read_varint()
@@ -247,11 +261,13 @@ class LoginSetCompression(ClientBoundPacket):
         """
         self.threshold = threshold
 
+    @override
     def serialize(self) -> Buffer:
         buf = Buffer()
         buf.write_varint(self.threshold)
         return buf
 
+    @override
     @classmethod
     def deserialize(cls, buf: Buffer, /) -> Self:
         threshold = buf.read_varint()
