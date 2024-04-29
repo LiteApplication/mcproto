@@ -34,11 +34,11 @@ def test_serialize_deserialize_end():
     assert output_bytes == bytearray.fromhex("00")
 
     buffer = Buffer()
-    EndNBT().write_to(buffer)
+    EndNBT().serialize_to(buffer)
     assert buffer == bytearray.fromhex("00")
 
     buffer.clear()
-    EndNBT().write_to(buffer, with_name=False)
+    EndNBT().serialize_to(buffer, with_name=False)
     assert buffer == bytearray.fromhex("00")
 
     buffer = Buffer(bytearray.fromhex("00"))
@@ -229,7 +229,7 @@ def test_serialize_deserialize_noname(nbt_class: type[NBTag], value: PayloadType
     assert output_bytes_no_type == expected_bytes[1:]
 
     buffer = Buffer()
-    nbt_class(value).write_to(buffer, with_name=False)
+    nbt_class(value).serialize_to(buffer, with_name=False)
     assert buffer == expected_bytes
 
     # Test deserialization
@@ -628,7 +628,7 @@ def test_serialize_deserialize(nbt_class: type[NBTag], value: PayloadType, name:
     assert output_bytes_no_type == expected_bytes[1:]
 
     buffer = Buffer()
-    nbt_class(value, name).write_to(buffer)
+    nbt_class(value, name).serialize_to(buffer)
     assert buffer == expected_bytes
 
     # Test deserialization

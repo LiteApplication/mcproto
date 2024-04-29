@@ -193,7 +193,7 @@ class NBTag(MCType, NBTagConvertible):
 
     @override
     def serialize(self, with_type: bool = True, with_name: bool = True) -> Buffer:
-        """Serialize the NBT tag to a buffer.
+        """Serialize the NBT tag to a new buffer.
 
         :param with_type:
             Whether to include the type of the tag in the serialization. (Passed to :meth:`_write_header`)
@@ -204,7 +204,7 @@ class NBTag(MCType, NBTagConvertible):
         .. note:: The ``with_type`` and ``with_name`` parameters only control the first level of serialization.
         """
         buf = Buffer()
-        self.write_to(buf, with_name=with_name, with_type=with_type)
+        self.serialize_to(buf, with_name=with_name, with_type=with_type)
         return buf
 
     @override
@@ -231,12 +231,16 @@ class NBTag(MCType, NBTagConvertible):
         tag.name = name
         return tag
 
+    @override
     @abstractmethod
-    def write_to(self, buf: Buffer, with_type: bool = True, with_name: bool = True) -> None:
-        """Write the NBT tag to the buffer.
+    def serialize_to(self, buf: Buffer, with_type: bool = True, with_name: bool = True) -> None:
+        """Serialize the NBT tag to a buffer.
 
-        Implementation shortcut used in :meth:`serialize`. (Subclasses can override this, avoiding some
-        repetition when compared to overriding ``serialize`` directly.)
+        :param buf: The buffer to write to.
+        :param with_type: Whether to include the type of the tag in the serialization.
+        :param with_name: Whether to include the name of the tag in the serialization.
+
+        .. seealso:: :meth:`serialize`
         """
         raise NotImplementedError
 
@@ -261,7 +265,7 @@ class NBTag(MCType, NBTagConvertible):
             tag_type = _get_tag_type(self)
             buf.write_value(StructFormat.BYTE, tag_type.value)
         if with_name and self.name:
-            StringNBT(self.name).write_to(buf, with_type=False, with_name=False)
+            StringNBT(self.name).serialize_to(buf, with_type=False, with_name=False)
 
     @classmethod
     def _read_header(cls, buf: Buffer, read_type: bool = True, with_name: bool = True) -> tuple[str, NBTagType]:
@@ -404,7 +408,9 @@ class NBTag(MCType, NBTagConvertible):
         if isinstance(first_schema, (list, dict)) and not all(isinstance(item, type(first_schema)) for item in schema):
             raise TypeError(f"Expected a list of lists or dictionaries, but found a different type ({schema=}).")
         # NBTag case
-        if isinstance(first_schema, type) and not all(item == first_schema for item in schema):
+        # Now don't get me wrong, this is actually covered but the coverage tool thinks that it's missing a case with
+        # an empty list, which is not possible because of the previous checks
+        if isinstance(first_schema, type) and not all(item == first_schema for item in schema):  # pragma: no cover
             raise TypeError(f"The schema must contain a single type of elements. ({schema=})")
 
         for item, sub_schema in zip(data, schema):
@@ -484,7 +490,7 @@ class EndNBT(NBTag):
         super().__init__(0, name="")
 
     @override
-    def write_to(self, buf: Buffer, with_type: bool = True, with_name: bool = False) -> None:
+    def serialize_to(self, buf: Buffer, with_type: bool = True, with_name: bool = False) -> None:
         self._write_header(buf, with_type=with_type, with_name=False)
 
     @override
@@ -514,7 +520,7 @@ class ByteNBT(NBTag):
     payload: int
 
     @override
-    def write_to(self, buf: Buffer, with_type: bool = True, with_name: bool = True) -> None:
+    def serialize_to(self, buf: Buffer, with_type: bool = True, with_name: bool = True) -> None:
         self._write_header(buf, with_type=with_type, with_name=with_name)
         if self.payload < -(1 << 7) or self.payload >= 1 << 7:
             raise OverflowError("Byte value out of range.")
@@ -549,7 +555,7 @@ class ShortNBT(ByteNBT):
     __slots__ = ()
 
     @override
-    def write_to(self, buf: Buffer, with_type: bool = True, with_name: bool = True) -> None:
+    def serialize_to(self, buf: Buffer, with_type: bool = True, with_name: bool = True) -> None:
         self._write_header(buf, with_type=with_type, with_name=with_name)
 
         if self.payload < -(1 << 15) or self.payload >= 1 << 15:
@@ -576,7 +582,7 @@ class IntNBT(ByteNBT):
     __slots__ = ()
 
     @override
-    def write_to(self, buf: Buffer, with_type: bool = True, with_name: bool = True) -> None:
+    def serialize_to(self, buf: Buffer, with_type: bool = True, with_name: bool = True) -> None:
         self._write_header(buf, with_type=with_type, with_name=with_name)
 
         if self.payload < -(1 << 31) or self.payload >= 1 << 31:
@@ -604,7 +610,7 @@ class LongNBT(ByteNBT):
     __slots__ = ()
 
     @override
-    def write_to(self, buf: Buffer, with_type: bool = True, with_name: bool = True) -> None:
+    def serialize_to(self, buf: Buffer, with_type: bool = True, with_name: bool = True) -> None:
         self._write_header(buf, with_type=with_type, with_name=with_name)
 
         if self.payload < -(1 << 63) or self.payload >= 1 << 63:
@@ -634,7 +640,7 @@ class FloatNBT(NBTag):
     __slots__ = ()
 
     @override
-    def write_to(self, buf: Buffer, with_type: bool = True, with_name: bool = True) -> None:
+    def serialize_to(self, buf: Buffer, with_type: bool = True, with_name: bool = True) -> None:
         self._write_header(buf, with_type=with_type, with_name=with_name)
         buf.write_value(StructFormat.FLOAT, self.payload)
 
@@ -666,7 +672,7 @@ class DoubleNBT(FloatNBT):
     __slots__ = ()
 
     @override
-    def write_to(self, buf: Buffer, with_type: bool = True, with_name: bool = True) -> None:
+    def serialize_to(self, buf: Buffer, with_type: bool = True, with_name: bool = True) -> None:
         self._write_header(buf, with_type=with_type, with_name=with_name)
         buf.write_value(StructFormat.DOUBLE, self.payload)
 
@@ -691,9 +697,9 @@ class ByteArrayNBT(NBTag):
     payload: bytes
 
     @override
-    def write_to(self, buf: Buffer, with_type: bool = True, with_name: bool = True) -> None:
+    def serialize_to(self, buf: Buffer, with_type: bool = True, with_name: bool = True) -> None:
         self._write_header(buf, with_type=with_type, with_name=with_name)
-        IntNBT(len(self.payload)).write_to(buf, with_type=False, with_name=False)
+        IntNBT(len(self.payload)).serialize_to(buf, with_type=False, with_name=False)
         buf.write(self.payload)
 
     @override
@@ -743,14 +749,14 @@ class StringNBT(NBTag):
     payload: str
 
     @override
-    def write_to(self, buf: Buffer, with_type: bool = True, with_name: bool = True) -> None:
+    def serialize_to(self, buf: Buffer, with_type: bool = True, with_name: bool = True) -> None:
         self._write_header(buf, with_type=with_type, with_name=with_name)
         if len(self.payload) > 32767:
             # Check the length of the string (can't generate strings that long in tests)
             raise ValueError("Maximum character limit for writing strings is 32767 characters.")  # pragma: no cover
 
         data = bytes(self.payload, "utf-8")
-        ShortNBT(len(data)).write_to(buf, with_type=False, with_name=False)
+        ShortNBT(len(data)).serialize_to(buf, with_type=False, with_name=False)
         buf.write(data)
 
     @override
@@ -790,13 +796,13 @@ class ListNBT(NBTag):
     payload: list[NBTag]
 
     @override
-    def write_to(self, buf: Buffer, with_type: bool = True, with_name: bool = True) -> None:
+    def serialize_to(self, buf: Buffer, with_type: bool = True, with_name: bool = True) -> None:
         self._write_header(buf, with_type=with_type, with_name=with_name)
 
         if not self.payload:
             # Set the tag type to TAG_End if the list is empty
-            EndNBT().write_to(buf, with_name=False)
-            IntNBT(0).write_to(buf, with_name=False, with_type=False)
+            EndNBT().serialize_to(buf, with_name=False)
+            IntNBT(0).serialize_to(buf, with_name=False, with_type=False)
             return
 
         if not all(isinstance(tag, NBTag) for tag in self.payload):  # type: ignore # We want to check anyway
@@ -806,15 +812,15 @@ class ListNBT(NBTag):
             )
 
         tag_type = _get_tag_type(self.payload[0])
-        ByteNBT(tag_type).write_to(buf, with_name=False, with_type=False)
-        IntNBT(len(self.payload)).write_to(buf, with_name=False, with_type=False)
+        ByteNBT(tag_type).serialize_to(buf, with_name=False, with_type=False)
+        IntNBT(len(self.payload)).serialize_to(buf, with_name=False, with_type=False)
         for tag in self.payload:
             if tag_type != _get_tag_type(tag):
                 raise ValueError(f"All tags in a list must be of the same type, got tag {tag!r}")
             if tag.name != "":
                 raise ValueError(f"All tags in a list must be unnamed, got tag {tag!r}")
 
-            tag.write_to(buf, with_type=False, with_name=False)
+            tag.serialize_to(buf, with_type=False, with_name=False)
 
     @override
     @classmethod
@@ -905,10 +911,10 @@ class CompoundNBT(NBTag):
     payload: list[NBTag]
 
     @override
-    def write_to(self, buf: Buffer, with_type: bool = True, with_name: bool = True) -> None:
+    def serialize_to(self, buf: Buffer, with_type: bool = True, with_name: bool = True) -> None:
         self._write_header(buf, with_type=with_type, with_name=with_name)
         if not self.payload:
-            EndNBT().write_to(buf, with_name=False, with_type=True)
+            EndNBT().serialize_to(buf, with_name=False, with_type=True)
             return
         if not all(isinstance(tag, NBTag) for tag in self.payload):  # type: ignore # We want to check anyway
             raise ValueError(
@@ -923,8 +929,8 @@ class CompoundNBT(NBTag):
             raise ValueError("All tags in a compound must have unique names.")
 
         for tag in self.payload:
-            tag.write_to(buf)
-        EndNBT().write_to(buf, with_name=False, with_type=True)
+            tag.serialize_to(buf)
+        EndNBT().serialize_to(buf, with_name=False, with_type=True)
 
     @override
     @classmethod
@@ -1017,7 +1023,7 @@ class IntArrayNBT(NBTag):
     payload: list[int]
 
     @override
-    def write_to(self, buf: Buffer, with_type: bool = True, with_name: bool = True) -> None:
+    def serialize_to(self, buf: Buffer, with_type: bool = True, with_name: bool = True) -> None:
         self._write_header(buf, with_type=with_type, with_name=with_name)
 
         if any(not isinstance(item, int) for item in self.payload):  # type: ignore # We want to check anyway
@@ -1026,9 +1032,9 @@ class IntArrayNBT(NBTag):
         if any(item < -(1 << 31) or item >= 1 << 31 for item in self.payload):
             raise OverflowError("Integer array contains values out of range.")
 
-        IntNBT(len(self.payload)).write_to(buf, with_name=False, with_type=False)
+        IntNBT(len(self.payload)).serialize_to(buf, with_name=False, with_type=False)
         for i in self.payload:
-            IntNBT(i).write_to(buf, with_name=False, with_type=False)
+            IntNBT(i).serialize_to(buf, with_name=False, with_type=False)
 
     @override
     @classmethod
@@ -1069,7 +1075,7 @@ class LongArrayNBT(IntArrayNBT):
     __slots__ = ()
 
     @override
-    def write_to(self, buf: Buffer, with_type: bool = True, with_name: bool = True) -> None:
+    def serialize_to(self, buf: Buffer, with_type: bool = True, with_name: bool = True) -> None:
         self._write_header(buf, with_type=with_type, with_name=with_name)
 
         if any(not isinstance(item, int) for item in self.payload):  # type: ignore # We want to check anyway
@@ -1078,9 +1084,9 @@ class LongArrayNBT(IntArrayNBT):
         if any(item < -(1 << 63) or item >= 1 << 63 for item in self.payload):
             raise OverflowError(f"Long array contains values out of range. ({self.payload})")
 
-        IntNBT(len(self.payload)).write_to(buf, with_name=False, with_type=False)
+        IntNBT(len(self.payload)).serialize_to(buf, with_name=False, with_type=False)
         for i in self.payload:
-            LongNBT(i).write_to(buf, with_name=False, with_type=False)
+            LongNBT(i).serialize_to(buf, with_name=False, with_type=False)
 
     @override
     @classmethod
