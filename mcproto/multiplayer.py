@@ -7,7 +7,7 @@ from typing import TypedDict
 import httpx
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
-from typing_extensions import Self
+from typing_extensions import override
 
 from mcproto.auth.account import Account
 
@@ -33,7 +33,7 @@ class UserJoinRequestErrorKind(str, Enum):
     UNKNOWN = "This is an unknown error."
 
     @classmethod
-    def from_status_error(cls, code: int, err_msg: str | None) -> Self:
+    def from_status_error(cls, code: int, err_msg: str | None) -> UserJoinRequestErrorKind:
         """Determine the error kind based on the status code and error message."""
         if code == 403:
             if err_msg == "InsufficientPrivilegesException":
@@ -76,6 +76,7 @@ class UserJoinRequestFailedError(Exception):
 
         return " ".join(msg_parts)
 
+    @override
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.msg})"
 
@@ -98,6 +99,7 @@ class UserJoinCheckFailedError(Exception):
         self.client_ip = client_ip
         super().__init__(repr(self))
 
+    @override
     def __repr__(self) -> str:
         msg = "Unable to verify user join for "
         msg += f"username={self.client_username!r}, server_hash={self.server_hash!r}, client_ip={self.client_ip!r}"

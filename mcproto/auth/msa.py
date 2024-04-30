@@ -3,7 +3,7 @@ from __future__ import annotations
 from enum import Enum
 
 import httpx
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from mcproto.auth.account import Account
 from mcproto.types.uuid import UUID as McUUID  # noqa: N811
@@ -24,7 +24,7 @@ class ServicesAPIErrorType(str, Enum):
     UNKNOWN = "This is an unknown error."
 
     @classmethod
-    def from_status_error(cls, code: int, err_msg: str | None) -> Self:
+    def from_status_error(cls, code: int, err_msg: str | None) -> ServicesAPIErrorType:
         """Determine the error kind based on the error data."""
         if code == 401 and err_msg == "Invalid app registration, see https://aka.ms/AppRegInfo for more information":
             return cls.INVALID_REGISTRATION
@@ -59,6 +59,7 @@ class ServicesAPIError(Exception):
 
         return " ".join(msg_parts)
 
+    @override
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.msg})"
 

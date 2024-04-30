@@ -5,7 +5,7 @@ from enum import Enum
 from uuid import uuid4
 
 import httpx
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from mcproto.auth.account import Account
 from mcproto.types.uuid import UUID as McUUID  # noqa: N811
@@ -43,7 +43,13 @@ class AuthServerApiErrorType(str, Enum):
     UNKNOWN = "This is an unknown error."
 
     @classmethod
-    def from_status_error(cls, code: int, short_msg: str, full_msg: str, cause_msg: str | None) -> Self:
+    def from_status_error(
+        cls,
+        code: int,
+        short_msg: str,
+        full_msg: str,
+        cause_msg: str | None,
+    ) -> AuthServerApiErrorType:
         """Determine the error kind based on the error data."""
         if code == 410:
             return cls.MICROSOFT_MIGRATED
@@ -96,6 +102,7 @@ class AuthServerApiError(Exception):
 
         return " ".join(msg_parts)
 
+    @override
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.msg})"
 

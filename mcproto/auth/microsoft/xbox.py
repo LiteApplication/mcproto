@@ -4,7 +4,7 @@ from enum import Enum
 from typing import NamedTuple
 
 import httpx
-from typing_extensions import Self
+from typing_extensions import override
 
 __all__ = [
     "XSTSErrorType",
@@ -34,7 +34,7 @@ class XSTSErrorType(str, Enum):
     UNKNOWN = "This is an unknown error."
 
     @classmethod
-    def from_status_error(cls, xerr_no: int) -> Self:
+    def from_status_error(cls, xerr_no: int) -> XSTSErrorType:
         """Determine the error kind based on the error data."""
         if xerr_no == 2148916233:
             return cls.NO_XBOX_ACCOUNT
@@ -77,6 +77,7 @@ class XSTSRequestError(Exception):
 
         return " ".join(msg_parts)
 
+    @override
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.msg})"
 

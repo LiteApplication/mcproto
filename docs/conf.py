@@ -6,6 +6,7 @@ https://www.sphinx-doc.org/en/master/usage/configuration.html
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 """
+
 from __future__ import annotations
 
 import sys
@@ -13,6 +14,7 @@ from datetime import date
 from pathlib import Path
 
 from packaging.version import parse as parse_version
+from typing_extensions import override
 
 if sys.version_info >= (3, 11):
     from tomllib import load as toml_parse
@@ -171,6 +173,7 @@ def mock_autodoc() -> None:
     from sphinx.ext import autodoc
 
     class MockedClassDocumenter(autodoc.ClassDocumenter):
+        @override
         def add_line(self, line: str, source: str, *lineno: int) -> None:
             if line == "   Bases: :py:class:`object`":
                 return
