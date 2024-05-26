@@ -1,0 +1,41 @@
+from __future__ import annotations
+
+from mcproto.packets.configuration.configuration import (
+    AcknowledgeFinishConfiguration,
+    AddResourcePack,
+    ClientInformation,
+    ClientboundKeepAlive,
+    ClientboundPluginMessage,
+    Disconnect,
+    FeatureFlags,
+    FinishConfiguration,
+    Ping,
+    Pong,
+    RegistryData,
+    RemoveResourcePack,
+    ResourcePackResponse,
+    ResourcePackResult,
+    ServerboundKeepAlive,
+    ServerboundPluginMessage,
+    UpdateTags,
+)
+
+__all__ = [
+    "ClientboundPluginMessage",
+    "Disconnect",
+    "FinishConfiguration",
+    "ClientboundKeepAlive",
+    "Ping",
+    "RegistryData",
+    "RemoveResourcePack",
+    "AddResourcePack",
+    "FeatureFlags",
+    "UpdateTags",
+    "ClientInformation",
+    "ServerboundPluginMessage",
+    "AcknowledgeFinishConfiguration",
+    "ServerboundKeepAlive",
+    "Pong",
+    "ResourcePackResult",
+    "ResourcePackResponse",
+]

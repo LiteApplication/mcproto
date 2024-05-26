@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from mcproto.packets.login.login import (
+    LoginAcknowledged,
     LoginDisconnect,
     LoginEncryptionRequest,
     LoginEncryptionResponse,
@@ -20,4 +21,5 @@ __all__ = [
     "LoginSetCompression",
     "LoginStart",
     "LoginSuccess",
+    "LoginAcknowledged",
 ]
