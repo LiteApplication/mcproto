@@ -9,6 +9,7 @@ from mcproto.packets.login.login import (
     LoginSetCompression,
     LoginStart,
     LoginSuccess,
+    LoginAcknowledged,
 )
 
 __all__ = [
@@ -20,4 +21,5 @@ __all__ = [
     "LoginSetCompression",
     "LoginStart",
     "LoginSuccess",
+    "LoginAcknowledged",
 ]

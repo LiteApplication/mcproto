@@ -22,6 +22,7 @@ __all__ = [
     "LoginSetCompression",
     "LoginStart",
     "LoginSuccess",
+    "LoginAcknowledged",
 ]
 
 
@@ -253,6 +254,27 @@ class LoginPluginResponse(ServerBoundPacket):
         message_id = buf.read_varint()
         data = buf.read_optional(lambda: bytes(buf.read(buf.remaining)))
         return cls(message_id, data)
+
+
+@final
+@define
+class LoginAcknowledged(ServerBoundPacket):
+    """Acknowledgement to the Login Success packet sent by the server. (Server -> Client).
+
+    Initialize the LoginAcknowledged packet.
+    """
+
+    PACKET_ID: ClassVar[int] = 0x3
+    GAME_STATE: ClassVar[GameState] = GameState.LOGIN
+
+    @override
+    def serialize_to(self, buf: Buffer) -> None:
+        pass
+
+    @override
+    @classmethod
+    def _deserialize(cls, buf: Buffer, /) -> Self:
+        return cls()
 
 
 @final

@@ -208,7 +208,7 @@ class NBTag(MCType, NBTagConvertible):
 
     @override
     @classmethod
-    def deserialize(cls, buf: Buffer, with_name: bool = True, with_type: bool = True) -> NBTag:
+    def deserialize(cls, buf: Buffer, with_name: bool = True, with_type: bool = True) -> Self:
         """Deserialize the NBT tag.
 
         :param buf: The buffer to read from.
@@ -228,7 +228,7 @@ class NBTag(MCType, NBTagConvertible):
 
         tag = tag_class.read_from(buf, with_type=False, with_name=False)
         tag.name = name
-        return tag
+        return cast(cls, tag)
 
     @override
     @abstractmethod

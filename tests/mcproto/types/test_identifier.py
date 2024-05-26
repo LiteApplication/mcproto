@@ -19,3 +19,31 @@ gen_serializable_test(
         (("minecraft", "a" * 32767), ValueError),  # Too long
     ],
 )
+
+
+def test_identifier_one_arg():
+    """Test the Identifier class when only one argument is provided."""
+    identifier = Identifier("minecraft:stone")
+    assert identifier.namespace == "minecraft"
+    assert identifier.path == "stone"
+
+    identifier = Identifier("stone_brick")
+    assert identifier.namespace == "minecraft"
+    assert identifier.path == "stone_brick"
+
+    identifier = Identifier("minecraft:stone_brick_slab")
+    assert identifier.namespace == "minecraft"
+    assert identifier.path == "stone_brick_slab"
+
+    identifier = Identifier("#dirt")
+    assert identifier.namespace == "minecraft"
+    assert identifier.path == "dirt"
+
+
+def test_identifier_dunder():
+    """Test __hash__, __str__, and __repr__ methods of the Identifier class."""
+    identifier = Identifier("minecraft:stone")
+    assert hash(identifier) == hash(("minecraft", "stone"))
+    assert str(identifier) == "minecraft:stone"
+    assert repr(identifier) == "Identifier(namespace='minecraft', path='stone')"
+    assert identifier == Identifier("minecraft:stone")

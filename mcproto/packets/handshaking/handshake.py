@@ -46,10 +46,9 @@ class Handshake(ServerBoundPacket):
 
     @override
     def __attrs_post_init__(self) -> None:
+        super().__attrs_post_init__()
         if not isinstance(self.next_state, NextState):
             self.next_state = NextState(self.next_state)
-
-        super().__attrs_post_init__()
 
     @override
     def serialize_to(self, buf: Buffer) -> None:

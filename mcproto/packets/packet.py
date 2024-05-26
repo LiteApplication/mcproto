@@ -26,6 +26,7 @@ class GameState(IntEnum):
     STATUS = 1
     LOGIN = 2
     PLAY = 3
+    CONFIGURATION = 4  # Number chosen arbitrarily, as it doesn't seem to have a specific value in the protocol
 
 
 class PacketDirection(IntEnum):

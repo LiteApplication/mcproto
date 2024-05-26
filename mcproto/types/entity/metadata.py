@@ -352,8 +352,6 @@ class EntityMetadataCreator(ABCMeta):
                 current_index += 1
             elif isinstance(default, type) and issubclass(default, _ProxyEntityMetadataEntry):
                 # Find the bound entry
-                if id(default.m_bound_entry) not in bound_index:
-                    raise ValueError(f"Bound entry for {name} is not set.")
                 bound_entry = bound_index[id(default.m_bound_entry)]
 
                 # Set the index of the proxy entry

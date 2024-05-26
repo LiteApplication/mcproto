@@ -9,6 +9,7 @@ from mcproto.packets.login.login import (
     LoginSetCompression,
     LoginStart,
     LoginSuccess,
+    LoginAcknowledged,
 )
 from mcproto.packets.packet import InvalidPacketContentError
 from mcproto.types.chat import JSONTextComponent
@@ -139,5 +140,15 @@ gen_serializable_test(
             (2,),
             bytes.fromhex("02"),
         ),
+    ],
+)
+
+# LoginAcknowledged
+gen_serializable_test(
+    context=globals(),
+    cls=LoginAcknowledged,
+    fields=[("message_id", int)],
+    serialize_deserialize=[
+        ((), b""),
     ],
 )
