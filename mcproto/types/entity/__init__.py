@@ -148,7 +148,7 @@ from mcproto.types.entity.generated import (
 #     You can modify it by changing what you want in the script.
 ######################################################################
 
-from mcproto.types.entity.enums import Pose, DragonPhase, SnifferState, Direction
+from mcproto.types.entity.enums import Direction, DragonPhase, Pose, SnifferState
 
 __all__ = [
     "EntityEM",
@@ -293,8 +293,8 @@ __all__ = [
     "SlimeEM",
     "LlamaSpitEM",
     "PrimedTntEM",
-    "Pose",
-    "DragonPhase",
     "SnifferState",
     "Direction",
+    "DragonPhase",
+    "Pose",
 ]

@@ -536,8 +536,8 @@ ENTITY_DATA: list[EntityData] = [
             {
                 "type": "Particle",
                 "name": "effect",
-                "default": "(0, None)",
-                "input": "tuple[int, Any]",
+                "default": "ParticleData(0)",
+                "input": "ParticleData",
                 "description": "The particle effect of the area effect cloud.",
             },
         ],

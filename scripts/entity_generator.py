@@ -50,9 +50,9 @@ __all__ = [
 
 BASE_FILE = """
 from __future__ import annotations
-from typing import ClassVar, Any
 {header}
 
+from typing import ClassVar
 from mcproto.types.entity.metadata import (
     proxy,
     entry,
@@ -64,6 +64,7 @@ from mcproto.types.chat import TextComponent
 from mcproto.types.nbt import NBTag, EndNBT
 from mcproto.types.vec3 import Position
 from mcproto.types.uuid import UUID
+from mcproto.types.particle_data import ParticleData
 
 {classes}
 """
@@ -238,8 +239,8 @@ def write_files(entity_data: list[EntityData]) -> None:
         class_code.append(class_str)
         generated.append(entity_name)
     all_classes_str = ",\n    ".join(f'"{c}"' for c in all_classes + list(enums))
-    types_str = ", ".join(types)
-    enums_str = ", ".join(enums)
+    types_str = ", ".join(sorted(types))
+    enums_str = ", ".join(sorted(enums))
     generated_str = ", ".join(generated)
 
     header = FILE_HEADER.format(

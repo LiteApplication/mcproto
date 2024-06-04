@@ -9,11 +9,7 @@ from mcproto.buffer import Buffer
 from mcproto.protocol.base_io import StructFormat
 from mcproto.packets.packet import ClientBoundPacket, GameState, ServerBoundPacket
 from attrs import define
-from mcproto.types.identifier import Identifier
-from mcproto.types.chat import TextComponent
-from mcproto.types.uuid import UUID
-from mcproto.types.nbt import CompoundNBT
-from mcproto.types.tag import RegistryTag
+from mcproto.types import Identifier, TextComponent, UUID, CompoundNBT, RegistryTag
 
 __all__ = [
     "ClientboundPluginMessage",

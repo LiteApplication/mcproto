@@ -16,6 +16,7 @@ from mcproto.types.quaternion import Quaternion
 from mcproto.types.slot import Slot
 from mcproto.types.vec3 import Position, Vec3
 from mcproto.types.uuid import UUID
+from mcproto.types.particle_data import ParticleData
 
 
 class ByteEME(EntityMetadataEntry):
@@ -458,19 +459,17 @@ class ParticleEME(EntityMetadataEntry):
     ENTRY_TYPE: ClassVar[int] = 17
     __slots__ = ()
 
-    value: tuple[int, Any]
+    value: ParticleData
 
     @override
     def serialize_to(self, buf: Buffer) -> None:
-        self._write_header(buf)  # pragma: no cover
-        buf.write_varint(self.value[0])  # pragma: no cover
-        raise NotImplementedError("The rest of the particle data is not implemented yet.")  # pragma: no cover
+        self._write_header(buf)
+        self.value.serialize_to(buf, with_id=True)
 
     @override
     @classmethod
-    def read_value(cls, buf: Buffer) -> tuple[int, Any]:
-        value = buf.read_varint()  # pragma: no cover   # noqa: F841
-        raise NotImplementedError("The rest of the particle data is not implemented yet.")
+    def read_value(cls, buf: Buffer) -> ParticleData:
+        return ParticleData.deserialize(buf, particle_id=None)  # Read the particle ID from the buffer
 
 
 class VillagerDataEME(EntityMetadataEntry):

@@ -3,8 +3,9 @@ from __future__ import annotations
 from typing import final
 from mcproto.buffer import Buffer
 from mcproto.types.abc import MCType
-from typing_extensions import override
 from attrs import define
+
+from typing_extensions import override
 from mcproto.types.identifier import Identifier
 
 
