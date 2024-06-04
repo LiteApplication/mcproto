@@ -54,6 +54,7 @@ from __future__ import annotations
 {header}
 from typing import ClassVar, Any
 
+from typing import ClassVar
 from mcproto.types.entity.metadata import (
     proxy,
     entry,
@@ -67,6 +68,7 @@ from mcproto.types.particle_data import ParticleData
 from mcproto.types.vec3 import Position, Vec3
 from mcproto.types.quaternion import Quaternion
 from mcproto.types.uuid import UUID
+from mcproto.types.particle_data import ParticleData
 
 {classes}
 """
