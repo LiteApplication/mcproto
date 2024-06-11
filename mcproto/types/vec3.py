@@ -38,6 +38,26 @@ class Vec3(MCType):
         z = buf.read_value(StructFormat.FLOAT)
         return cls(x=x, y=y, z=z)
 
+    def serialize_to_double(self, buf: Buffer) -> None:
+        """Serialize the vector to a buffer using double precision.
+
+        .. seealso:: :meth:`serialize_to`
+        """
+        buf.write_value(StructFormat.DOUBLE, self.x)
+        buf.write_value(StructFormat.DOUBLE, self.y)
+        buf.write_value(StructFormat.DOUBLE, self.z)
+
+    @classmethod
+    def deserialize_double(cls, buf: Buffer) -> Vec3:
+        """Deserialize a vector from a buffer using double precision.
+
+        .. seealso:: :meth:`deserialize`
+        """
+        x = buf.read_value(StructFormat.DOUBLE)
+        y = buf.read_value(StructFormat.DOUBLE)
+        z = buf.read_value(StructFormat.DOUBLE)
+        return cls(x=x, y=y, z=z)
+
     @override
     def validate(self) -> None:
         """Validate the vector's components."""

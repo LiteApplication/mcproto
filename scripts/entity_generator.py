@@ -69,6 +69,7 @@ from mcproto.types.particle_data import ParticleData
 {classes}
 """
 INIT_FILE = """
+from mcproto.types.entity.metadata import EntityMetadata
 from mcproto.types.entity.generated import {generated}
 {header}
 """
@@ -227,7 +228,7 @@ def write_files(entity_data: list[EntityData]) -> None:
     """
     types: set[str] = set()
     enums: set[str] = set()
-    all_classes: list[str] = []
+    all_classes: list[str] = ["EntityMetadata"]
     class_code: list[str] = []
     generated: list[str] = []
     for entity in entity_data:

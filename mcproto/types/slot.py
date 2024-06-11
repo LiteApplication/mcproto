@@ -78,3 +78,7 @@ class Slot(MCType):
                 raise ValueError("Item count must be None if there is no item in the slot.")
             if self.nbt is not None and not isinstance(self.nbt, EndNBT):
                 raise ValueError("NBT data must be None if there is no item in the slot.")
+
+    @override
+    def __hash__(self) -> int:
+        return hash((self.present, self.item_id, self.item_count, self.nbt))

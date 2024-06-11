@@ -8,6 +8,7 @@ from __future__ import annotations
 from mcproto.types.entity.enums import Direction, DragonPhase, Pose, SnifferState
 
 __all__ = [
+    "EntityMetadata",
     "EntityEM",
     "InteractionEM",
     "DisplayEM",
@@ -150,10 +151,10 @@ __all__ = [
     "SlimeEM",
     "LlamaSpitEM",
     "PrimedTntEM",
-    "SnifferState",
+    "Pose",
     "Direction",
     "DragonPhase",
-    "Pose",
+    "SnifferState",
 ]
 
 

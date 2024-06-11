@@ -450,6 +450,10 @@ class NBTag(MCType, NBTagConvertible):
         return f"{type(self).__name__}({self.payload!r})"
 
     @override
+    def __hash__(self) -> int:
+        return hash((self.name, self.payload))
+
+    @override
     def to_nbt(self, name: str = "") -> NBTag:
         """Convert the object to an NBT tag.
 

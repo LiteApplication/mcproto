@@ -25,7 +25,7 @@ from mcproto.types.identifier import Identifier
 from mcproto.types.nbt import CompoundNBT, StringNBT
 from mcproto.types.uuid import UUID
 from mcproto.types.tag import RegistryTag
-from tests.helpers import gen_serializable_test, TestExc
+from tests.helpers import gen_serializable_test, ExcTest
 
 # ClientboundPluginMessage
 gen_serializable_test(
@@ -177,7 +177,7 @@ gen_serializable_test(
                 True,
                 None,
             ),
-            TestExc(ValueError, r"Hash SHA-1 must be a 40 character hexadecimal string\."),
+            ExcTest(ValueError, r"Hash SHA-1 must be a 40 character hexadecimal string\."),
         ),
     ],
 )
@@ -280,15 +280,15 @@ gen_serializable_test(
     validation_fail=[
         (
             ("en_GB", 10, 3, True, 0b00100000, 1, False, True),
-            TestExc(ValueError, re.escape("Chat mode must be 0, 1, or 2, got 3")),
+            ExcTest(ValueError, re.escape("Chat mode must be 0, 1, or 2, got 3")),
         ),
         (
             ("en_GB", 10, 0, True, 0b00100000, 2, False, True),
-            TestExc(ValueError, re.escape("Main hand must be 0 or 1, got 2")),
+            ExcTest(ValueError, re.escape("Main hand must be 0 or 1, got 2")),
         ),
         (
             ("too long for a locale", 10, 0, True, 0b00100000, 1, False, True),
-            TestExc(ValueError, re.escape("Locale is too long, must be at most 16 characters, got 21")),
+            ExcTest(ValueError, re.escape("Locale is too long, must be at most 16 characters, got 21")),
         ),
     ],
 )

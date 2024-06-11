@@ -35,7 +35,7 @@ __all__ = [
 @final
 @define
 class ClientboundPluginMessage(ClientBoundPacket):
-    """Mods and plugins can use this to send their data. (Client -> Server).
+    """Mods and plugins can use this to send their data. (Server -> Client).
 
     Minecraft itself uses several plugin channels. These internal channels are in the `minecraft` namespace.
 
@@ -69,7 +69,7 @@ class ClientboundPluginMessage(ClientBoundPacket):
 @final
 @define
 class Disconnect(ClientBoundPacket):
-    """Disconnect the player with a reason. (Client -> Server).
+    """Disconnect the player with a reason. (Server -> Client).
 
     Initialize the Disconnect packet.
 
@@ -96,7 +96,7 @@ class Disconnect(ClientBoundPacket):
 @final
 @define
 class FinishConfiguration(ClientBoundPacket):
-    """Sent by the server to notify the client that the configuration process has finished. (Client -> Server).
+    """Sent by the server to notify the client that the configuration process has finished. (Server -> Client).
 
     The client answers with Acknowledge Finish Configuration whenever it is ready to continue.
 
@@ -121,7 +121,7 @@ class FinishConfiguration(ClientBoundPacket):
 @final
 @define
 class ClientboundKeepAlive(ClientBoundPacket):
-    """The server will frequently send out a keep-alive, each containing a random ID. (Client -> Server).
+    """The server will frequently send out a keep-alive, each containing a random ID. (Server -> Client).
 
     The client must respond with the same payload (see Serverbound Keep Alive). If the client does not
     respond to a Keep Alive packet within 15 seconds after it was sent, the server kicks the client.
@@ -156,7 +156,7 @@ class ClientboundKeepAlive(ClientBoundPacket):
 @final
 @define
 class Ping(ClientBoundPacket):
-    """Packet is not used by the Notchian server. (Client -> Server).
+    """Packet is not used by the Notchian server. (Server -> Client).
 
     When sent to the client, client responds with a Pong packet with the same id.
 
@@ -185,7 +185,7 @@ class Ping(ClientBoundPacket):
 @final
 @define
 class RegistryData(ClientBoundPacket):
-    """Represents certain registries that are sent from the server and are applied on the client. (Client -> Server).
+    """Represents certain registries that are sent from the server and are applied on the client. (Server -> Client).
 
     Initialize the RegistryData packet.
 
@@ -215,7 +215,7 @@ class RegistryData(ClientBoundPacket):
 @final
 @define
 class RemoveResourcePack(ClientBoundPacket):
-    """Remove Resource Pack (configuration) (Client -> Server).
+    """Remove Resource Pack (configuration) (Server -> Client).
 
     Initialize the RemoveResourcePack packet.
 
@@ -242,7 +242,7 @@ class RemoveResourcePack(ClientBoundPacket):
 @final
 @define
 class AddResourcePack(ClientBoundPacket):
-    """Add Resource Pack (configuration) (Client -> Server).
+    """Add Resource Pack (configuration) (Server -> Client).
 
     Initialize the AddResourcePack packet.
 
@@ -310,7 +310,7 @@ class AddResourcePack(ClientBoundPacket):
 @final
 @define
 class FeatureFlags(ClientBoundPacket):
-    """Used to enable and disable features, generally experimental ones, on the client. (Client -> Server).
+    """Used to enable and disable features, generally experimental ones, on the client. (Server -> Client).
 
     Initialize the FeatureFlags packet.
 
@@ -340,7 +340,7 @@ class FeatureFlags(ClientBoundPacket):
 @final
 @define
 class UpdateTags(ClientBoundPacket):
-    """Update Tags (configuration) (Client -> Server).
+    """Update Tags (configuration) (Server -> Client).
 
     Contains :
     - Lenght of the array
@@ -392,7 +392,7 @@ class UpdateTags(ClientBoundPacket):
 @final
 @define
 class ClientInformation(ClientBoundPacket):
-    """Sent when the player connects, or when settings are changed. (Client -> Server).
+    """Sent when the player connects, or when settings are changed. (Server -> Client).
 
     Initialize the ClientInformation packet.
 
@@ -474,7 +474,7 @@ class ClientInformation(ClientBoundPacket):
 @final
 @define
 class ServerboundPluginMessage(ServerBoundPacket):
-    """Mods and plugins can use this to send data. See wiki.vg for plugin channels documentation. (Server -> Client).
+    """Mods and plugins can use this to send data. See wiki.vg for plugin channels documentation. (Client -> Server).
 
     Initialize the ServerboundPluginMessage packet.
 
@@ -506,7 +506,7 @@ class ServerboundPluginMessage(ServerBoundPacket):
 @final
 @define
 class AcknowledgeFinishConfiguration(ClientBoundPacket):
-    """Sent by the client to acknowledge the configuration process is finished. (Client -> Server).
+    """Sent by the client to acknowledge the configuration process is finished. (Server -> Client).
 
     Initialize the AcknowledgeFinishConfiguration packet.
     """
@@ -527,7 +527,7 @@ class AcknowledgeFinishConfiguration(ClientBoundPacket):
 @final
 @define
 class ServerboundKeepAlive(ServerBoundPacket):
-    """Response to server's keep-alive packet with the same ID. (Server -> Client).
+    """Response to server's keep-alive packet with the same ID. (Client -> Server).
 
     Initialize the ServerboundKeepAlive packet.
 
@@ -554,7 +554,7 @@ class ServerboundKeepAlive(ServerBoundPacket):
 @final
 @define
 class Pong(ClientBoundPacket):
-    """Response to the server's ping packet with the same ID. (Client -> Server).
+    """Response to the server's ping packet with the same ID. (Server -> Client).
 
     Initialize the Pong packet.
 
@@ -594,7 +594,7 @@ class ResourcePackResult(IntEnum):
 @final
 @define
 class ResourcePackResponse(ClientBoundPacket):
-    """Server's response to the client's resource pack request. (Client -> Server).
+    """Server's response to the client's resource pack request. (Server -> Client).
 
     Initialize the ResourcePackResponse packet.
 

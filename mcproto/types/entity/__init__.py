@@ -1,3 +1,4 @@
+from mcproto.types.entity.metadata import EntityMetadata
 from mcproto.types.entity.generated import (
     EntityEM,
     InteractionEM,
@@ -151,6 +152,7 @@ from mcproto.types.entity.generated import (
 from mcproto.types.entity.enums import Direction, DragonPhase, Pose, SnifferState
 
 __all__ = [
+    "EntityMetadata",
     "EntityEM",
     "InteractionEM",
     "DisplayEM",

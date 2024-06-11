@@ -259,7 +259,7 @@ class LoginPluginResponse(ServerBoundPacket):
 @final
 @define
 class LoginAcknowledged(ServerBoundPacket):
-    """Acknowledgement to the Login Success packet sent by the server. (Server -> Client).
+    """Acknowledgement to the Login Success packet sent by the server. (Client -> Server).
 
     Initialize the LoginAcknowledged packet.
     """
