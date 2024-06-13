@@ -48,6 +48,10 @@ class FixedBitset(MCType):
         return new_class
 
     @classmethod
+    def __class_getitem__(cls, n: int) -> type[FixedBitset]:
+        return cls.of_size(n)
+
+    @classmethod
     def from_int(cls, n: int) -> FixedBitset:
         """Return a new FixedBitset with the given integer value.
 

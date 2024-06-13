@@ -170,12 +170,12 @@ class AdvancementCriterion(MCType):
 
     @override
     def serialize_to(self, buf: Buffer) -> None:
-        buf.write_optional(self.date, lambda x: buf.write_value(StructFormat.LONG, x))
+        buf.write_optional(self.date, lambda x: buf.write_value(StructFormat.LONGLONG, x))
 
     @override
     @classmethod
     def deserialize(cls, buf: Buffer) -> AdvancementCriterion:
-        date = buf.read_optional(lambda: buf.read_value(StructFormat.LONG))
+        date = buf.read_optional(lambda: buf.read_value(StructFormat.LONGLONG))
         return cls(date=date)
 
     @property
