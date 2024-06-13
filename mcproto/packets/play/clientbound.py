@@ -44,8 +44,7 @@ class BundleDelimiter(ClientBoundPacket):
 
     When received, the client should store every subsequent packet it receives, and wait until another delimiter is
     received. Once that happens, the client is guaranteed to process every packet in the bundle on the same tick, and
-    the client
-    should stop storing packets.
+    the client should stop storing packets.
 
     Initialize the BundleDelimiter packet.
     """
@@ -428,31 +427,27 @@ class BlockAction(ClientBoundPacket):
         type of block based on the given position.
     :type block_type: int
 
-    .. note:: The `action_id` and `action_parameter` fields will be casted to integers.
+    .. note:: The `action_parameter` field will be casted to an integer.
     """
 
     PACKET_ID: ClassVar[int] = 0x08
     GAME_STATE: ClassVar[GameState] = GameState.PLAY
 
     location: Position
-    action_id: BlockActionID | int
+    action_id: BlockActionID
     action_parameter: BlockActionParameter | int
     block_type: int
 
-    @override
     def __attrs_post_init__(self) -> None:
-        if isinstance(self.action_id, BlockActionID):
-            self.action_id = self.action_id.value
         if isinstance(self.action_parameter, BlockActionParameter):
             self.action_parameter = self.action_parameter.value
 
     @override
     def serialize_to(self, buf: Buffer) -> None:
         self.location.serialize_to(buf)
-        self.action_id = cast(int, self.action_id)
         self.action_parameter = cast(int, self.action_parameter)
 
-        buf.write_value(StructFormat.UBYTE, self.action_id)
+        buf.write_value(StructFormat.UBYTE, self.action_id.value)
         buf.write_value(StructFormat.UBYTE, self.action_parameter)
         buf.write_varint(self.block_type)
 
@@ -460,7 +455,7 @@ class BlockAction(ClientBoundPacket):
     @classmethod
     def _deserialize(cls, buf: Buffer, /) -> Self:
         location = Position.deserialize(buf)
-        action_id = buf.read_value(StructFormat.UBYTE)
+        action_id = BlockActionID(buf.read_value(StructFormat.UBYTE))
         action_parameter = buf.read_value(StructFormat.UBYTE)
         block_type = buf.read_varint()
         return cls(location=location, action_id=action_id, action_parameter=action_parameter, block_type=block_type)
@@ -3241,7 +3236,7 @@ class PlayerInfoUpdate(ClientBoundPacket):
 
                 buf.write_value(StructFormat.BOOL, True)
                 self.chat_session_id.serialize_to(buf)
-                buf.write_value(StructFormat.LONG, self.pk_expiration)  # LONGLONG ?
+                buf.write_value(StructFormat.LONGLONG, self.pk_expiration)  # LONGLONG ?
                 buf.write_bytearray(self.public_key)  # Prefixed by its length
                 buf.write_bytearray(self.pk_signature)  # Prefixed by its length
             else:
@@ -3252,7 +3247,7 @@ class PlayerInfoUpdate(ClientBoundPacket):
         def deserialize(cls, buf: Buffer) -> Self:
             if buf.read_value(StructFormat.BOOL):
                 chat_session_id = UUID.deserialize(buf)
-                pk_expiration = buf.read_value(StructFormat.LONG)
+                pk_expiration = buf.read_value(StructFormat.LONGLONG)
                 public_key = bytes(buf.read_bytearray())
                 pk_signature = bytes(buf.read_bytearray())
             else:
@@ -3934,7 +3929,7 @@ class Respawn(ClientBoundPacket):
     def serialize_to(self, buf: Buffer) -> None:
         buf.write_varint(self.dimension_type)
         self.dimension_name.serialize_to(buf)
-        buf.write_value(StructFormat.LONG, self.hashed_seed)
+        buf.write_value(StructFormat.LONGLONG, self.hashed_seed)
         buf.write_value(StructFormat.UBYTE, self.game_mode)
         buf.write_value(StructFormat.BYTE, self.previous_game_mode)
         buf.write_value(StructFormat.BYTE, int(self.is_debug))
@@ -3951,7 +3946,7 @@ class Respawn(ClientBoundPacket):
     def _deserialize(cls, buf: Buffer, /) -> Self:
         dimension_type = buf.read_varint()
         dimension_name = Identifier.deserialize(buf)
-        hashed_seed = buf.read_value(StructFormat.LONG)
+        hashed_seed = buf.read_value(StructFormat.LONGLONG)
         game_mode = buf.read_value(StructFormat.UBYTE)
         previous_game_mode = buf.read_value(StructFormat.BYTE)
         is_debug = bool(buf.read_value(StructFormat.BOOL))
@@ -4036,7 +4031,7 @@ class UpdateSectionBlocks(ClientBoundPacket):
 
     @override
     def serialize_to(self, buf: Buffer) -> None:
-        buf.write_value(StructFormat.LONG, self.chunk_section_position)
+        buf.write_value(StructFormat.LONGLONG, self.chunk_section_position)
         buf.write_varint(len(self.blocks))
         for block in self.blocks:
             buf.write_varlong(block)
@@ -4044,7 +4039,7 @@ class UpdateSectionBlocks(ClientBoundPacket):
     @override
     @classmethod
     def _deserialize(cls, buf: Buffer, /) -> Self:
-        chunk_section_position = buf.read_value(StructFormat.LONG)
+        chunk_section_position = buf.read_value(StructFormat.LONGLONG)
         blocks_array_size = buf.read_varint()
         blocks = [buf.read_varlong() for _ in range(blocks_array_size)]
         return cls(chunk_section_position=chunk_section_position, blocks=blocks)
@@ -5232,14 +5227,14 @@ class UpdateTime(ClientBoundPacket):
 
     @override
     def serialize_to(self, buf: Buffer) -> None:
-        buf.write_value(StructFormat.LONG, self.world_age)
-        buf.write_value(StructFormat.LONG, self.time_of_day)
+        buf.write_value(StructFormat.LONGLONG, self.world_age)
+        buf.write_value(StructFormat.LONGLONG, self.time_of_day)
 
     @override
     @classmethod
     def _deserialize(cls, buf: Buffer, /) -> Self:
-        world_age = buf.read_value(StructFormat.LONG)
-        time_of_day = buf.read_value(StructFormat.LONG)
+        world_age = buf.read_value(StructFormat.LONGLONG)
+        time_of_day = buf.read_value(StructFormat.LONGLONG)
         return cls(world_age=world_age, time_of_day=time_of_day)
 
 
@@ -5372,7 +5367,7 @@ class EntitySoundEffect(ClientBoundPacket):
         buf.write_varint(self.entity_id)
         buf.write_value(StructFormat.FLOAT, self.volume)
         buf.write_value(StructFormat.FLOAT, self.pitch)
-        buf.write_value(StructFormat.LONG, self.seed)
+        buf.write_value(StructFormat.LONGLONG, self.seed)
 
     @override
     @classmethod
@@ -5386,7 +5381,7 @@ class EntitySoundEffect(ClientBoundPacket):
         entity_id = buf.read_varint()
         volume = buf.read_value(StructFormat.FLOAT)
         pitch = buf.read_value(StructFormat.FLOAT)
-        seed = buf.read_value(StructFormat.LONG)
+        seed = buf.read_value(StructFormat.LONGLONG)
         return cls(
             sound_id=sound_id,
             sound_name=sound_name,
@@ -5454,7 +5449,7 @@ class SoundEffect(ClientBoundPacket):
         buf.write_value(StructFormat.INT, int(self.position.z * 8))
         buf.write_value(StructFormat.FLOAT, self.volume)
         buf.write_value(StructFormat.FLOAT, self.pitch)
-        buf.write_value(StructFormat.LONG, self.seed)
+        buf.write_value(StructFormat.LONGLONG, self.seed)
 
     @override
     @classmethod
@@ -5472,7 +5467,7 @@ class SoundEffect(ClientBoundPacket):
         position = Vec3(float(position_x) / 8, float(position_y) / 8, float(position_z) / 8)
         volume = buf.read_value(StructFormat.FLOAT)
         pitch = buf.read_value(StructFormat.FLOAT)
-        seed = buf.read_value(StructFormat.LONG)
+        seed = buf.read_value(StructFormat.LONGLONG)
         return cls(
             sound_id=sound_id,
             sound_name=sound_name,
