@@ -15,6 +15,12 @@ gen_serializable_test(
 )
 
 
-def test_registry_tag_str():
-    """Test that registry tags can be printed as strings correctly."""
-    assert str(RegistryTag(Identifier("stone"), [1, 2, 3])) == "#minecraft:stone"
+
+def test_tag_str():
+    """Test the __str__ method of the RegistryTag class."""
+    tag = RegistryTag(Identifier("stone"), [1, 2, 3])
+    assert str(tag) == "#minecraft:stone"
+    tag = RegistryTag(Identifier("stone_brick"), [1, 2, 3, 4])
+    assert str(tag) == "#minecraft:stone_brick"
+    tag = RegistryTag(Identifier("stone_brick_slab"), [1, 2, 3, 4, 5])
+    assert str(tag) == "#minecraft:stone_brick_slab"

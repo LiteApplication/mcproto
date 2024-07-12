@@ -17,11 +17,11 @@ class Trade(MCType):
     """Defines a trade in a trade list.
 
     :param input_item: The item to be traded.
-    :type input_item: Slot
+    :type input_item: :class:`~mcproto.types.Slot`
     :param input_item2: The second item to be traded.
-    :type input_item2: Slot
+    :type input_item2: :class:`~mcproto.types.Slot`
     :param output_item: The item to be received.
-    :type output_item: Slot
+    :type output_item: :class:`~mcproto.types.Slot`
     :param trade_disabled: Whether the trade is disabled.
     :type trade_disabled: bool
     :param trade_uses: The number of times the trade has been used.

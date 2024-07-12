@@ -10,6 +10,7 @@ from typing_extensions import Self, override
 
 from mcproto.buffer import Buffer
 from mcproto.packets import ClientBoundPacket, GameState
+from mcproto.packets.configuration import ServerLinksType
 from mcproto.protocol.base_io import StructFormat
 from mcproto.types import (
     Advancement,
@@ -72,18 +73,18 @@ class SpawnEntity(ClientBoundPacket):
     :param entity_id: A unique integer ID mostly used in the protocol to identify the entity.
     :type entity_id: int
     :param entity_uuid: A unique identifier that is mostly used in persistence.
-    :type entity_uuid: UUID
+    :type entity_uuid: :class:`mcproto.types.UUID`
     :param entity_type: ID in the minecraft:entity_type registry (see "type" field in Entity metadata#Entities).
     :type entity_type: int
     :param entity_position: The position of the entity.
     :type entity_position: :class:`mcproto.types.Vec3`
     :param pitch: The pitch of the entity. To get the real pitch, you must divide this by (256.0F / 360.0F).
-    :type pitch: Angle
+    :type pitch: :class:`~mcproto.types.Angle`
     :param yaw: The yaw of the entity. To get the real yaw, you must divide this by (256.0F / 360.0F).
-    :type yaw: Angle
+    :type yaw: :class:`~mcproto.types.Angle`
     :param head_yaw: Only used by living entities, where the head of the entity may differ from the general body
     rotation.
-    :type head_yaw: Angle
+    :type head_yaw: :class:`~mcproto.types.Angle`
     :param data: Meaning dependent on the value of the entity_type field, see Object Data for details.
     :type data: int
     :param velocity_x: Same units as Set Entity Velocity.
@@ -209,7 +210,7 @@ class EntityAnimation(ClientBoundPacket):
     :param entity_id: Player ID.
     :type entity_id: int
     :param animation: Animation ID (see below).
-    :type animation: Animation
+    :type animation: :class:`~mcproto.types.Animation`
     """
 
     PACKET_ID: ClassVar[int] = 0x03
@@ -311,7 +312,7 @@ class SetBlockDestroyStage(ClientBoundPacket):
     :param entity_id: The ID of the entity breaking the block.
     :type entity_id: int
     :param location: Block Position.
-    :type location: Position
+    :type location: :class:`~mcproto.types.Position`
     :param destroy_stage: 0-9 to set it, any other value to remove it.
     :type destroy_stage: int
     """
@@ -418,11 +419,11 @@ class BlockAction(ClientBoundPacket):
     Initialize the BlockAction packet.
 
     :param location: Block coordinates.
-    :type location: Position
+    :type location: :class:`~mcproto.types.Position`
     :param action_id: Varies depending on block — see Block Actions.
-    :type action_id: BlockActionID
+    :type action_id: :class:`~mcproto.types.BlockActionID`
     :param action_parameter: Varies depending on block — see Block Actions.
-    :type action_parameter: BlockActionParameter | int
+    :type action_parameter: :class:`~mcproto.types.BlockActionParameter` | int
     :param block_type: The block type ID for the block. This is not used by the Notchian client, as it will infer the
         type of block based on the given position.
     :type block_type: int
@@ -469,7 +470,7 @@ class BlockUpdate(ClientBoundPacket):
     Initialize the BlockUpdate packet.
 
     :param location: Block coordinates.
-    :type location: Position
+    :type location: :class:`~mcproto.types.Position`
     :param block_id: The new block state ID for the block as given in the block state registry.
     :type block_id: int
     """
@@ -534,18 +535,18 @@ class BossBar(ClientBoundPacket):
     Initialize the BossBar packet.
 
     :param uuid: Unique ID for this bar.
-    :type uuid: UUID
+    :type uuid: :class:`mcproto.types.UUID`
     :param action: Determines the layout of the remaining packet.
-    :type action: BossBarAction
+    :type action: :class:`~mcproto.types.BossBarAction`
     :param title: The title of the boss bar. Only present if the action is ADD or UPDATE_TITLE.
-    :type title: TextComponent, optional
+    :type title: :class:`~mcproto.types.TextComponent`, optional
     :param health: From 0 to 1. Values greater than 1 do not crash a Notchian client, and start rendering part of a
     second health bar at around 1.5. Only present if the action is ADD or UPDATE_HEALTH.
     :type health: float, optional
     :param color: Color ID (see below). Only present if the action is ADD, UPDATE_HEALTH, or UPDATE_STYLE.
-    :type color: BossBarColor, optional
+    :type color: :class:`~mcproto.types.BossBarColor`, optional
     :param division: Type of division (see below). Only present if the action is ADD, UPDATE_HEALTH, or UPDATE_STYLE.
-    :type division: BossBarDivisionType, optional
+    :type division: :class:`~mcproto.types.BossBarDivisionType`, optional
     :param flags: Bit mask. 0x1: should darken sky, 0x2: is dragon bar (used to play end music), 0x04: create fog
     (previously was also controlled by 0x02). Only present if the action is ADD, UPDATE_FLAGS, or UPDATE_STYLE.
     :type flags: int, optional
@@ -961,7 +962,7 @@ class SetContainerContent(ClientBoundPacket):
     :param slot_data: A list of Slot objects representing the items in the container.
     :type slot_data: list[Slot]
     :param carried_item: The item being dragged with the mouse.
-    :type carried_item: Slot
+    :type carried_item: :class:`~mcproto.types.Slot`
     """
 
     PACKET_ID: ClassVar[int] = 0x13
@@ -1043,7 +1044,7 @@ class SetContainerSlot(ClientBoundPacket):
     :param slot: The slot that should be updated.
     :type slot: int
     :param slot_data: The new data for the slot.
-    :type slot_data: Slot
+    :type slot_data: :class:`~mcproto.types.Slot`
     """
 
     PACKET_ID: ClassVar[int] = 0x15
@@ -1175,7 +1176,7 @@ class ClientboundPluginMessage(ClientBoundPacket):
     Initialize the ClientboundPluginMessage packet.
 
     :param channel: Name of the plugin channel used to send the data.
-    :type channel: Identifier
+    :type channel: :class:`~mcproto.types.Identifier`
     :param data: Any data.
     :type data: bytes
     """
@@ -1339,7 +1340,7 @@ class Disconnect(ClientBoundPacket):
     Initialize the Disconnect packet.
 
     :param reason: Displayed to the client when the connection terminates.
-    :type reason: TextComponent
+    :type reason: :class:`~mcproto.types.TextComponent`
     """
 
     PACKET_ID: ClassVar[int] = 0x1D
@@ -1366,13 +1367,13 @@ class DisguisedChatMessage(ClientBoundPacket):
     Initialize the DisguisedChatMessage packet.
 
     :param message: This is used as the content parameter when formatting the message on the client.
-    :type message: TextComponent
+    :type message: :class:`~mcproto.types.TextComponent`
     :param chat_type: The type of chat in the minecraft:chat_type registry, defined by the Registry Data packet.
     :type chat_type: int
     :param sender_name: The name of the one sending the message, usually the sender's display name.
-    :type sender_name: TextComponent
+    :type sender_name: :class:`~mcproto.types.TextComponent`
     :param target_name: The name of the one receiving the message, usually the receiver's display name.
-    :type target_name: TextComponent, optional
+    :type target_name: :class:`~mcproto.types.TextComponent`, optional
     """
 
     PACKET_ID: ClassVar[int] = 0x1E
@@ -1462,7 +1463,7 @@ class Explosion(ClientBoundPacket):
     :param large_explosion_particle: The particle data for the large explosion.
     :type large_explosion_particle: :class:`mcproto.data_types.particle_data.ParticleData`
     :param explosion_sound: The name of the sound played.
-    :type explosion_sound: Identifier
+    :type explosion_sound: :class:`~mcproto.types.Identifier`
     :param explosion_range: The fixed range of the sound.
     :type explosion_range: float, optional
     """
@@ -1803,19 +1804,19 @@ class ChunkDataAndUpdateLight(ClientBoundPacket):
     :param chunk_z: The Z coordinate of the chunk.
     :type chunk_z: int
     :param heightmaps: The heightmaps data.
-    :type heightmaps: CompoundNBT
+    :type heightmaps: :class:`~mcproto.types.CompoundNBT`
     :param data: The chunk data.
     :type data: bytes
     :param block_entities: A list of block entities in the chunk.
     :type block_entities: list[BlockEntity]
     :param sky_light_mask: A bitset containing bits for each section in the world + 2.
-    :type sky_light_mask: Bitset
+    :type sky_light_mask: :class:`~mcproto.types.Bitset`
     :param block_light_mask: A bitset containing bits for each section in the world + 2.
-    :type block_light_mask: Bitset
+    :type block_light_mask: :class:`~mcproto.types.Bitset`
     :param empty_sky_light_mask: A bitset containing bits for each section in the world + 2.
-    :type empty_sky_light_mask: Bitset
+    :type empty_sky_light_mask: :class:`~mcproto.types.Bitset`
     :param empty_block_light_mask: A bitset containing bits for each section in the world + 2.
-    :type empty_block_light_mask: Bitset
+    :type empty_block_light_mask: :class:`~mcproto.types.Bitset`
     :param sky_light_arrays: A list of sky light arrays.
     :type sky_light_arrays: list[bytes]
     :param block_light_arrays: A list of block light arrays.
@@ -1903,7 +1904,7 @@ class WorldEvent(ClientBoundPacket):
     :param event: The event type.
     :type event: int
     :param location: The location of the event.
-    :type location: Position
+    :type location: :class:`~mcproto.types.Position`
     :param data: Extra data for certain events.
     :type data: int
     :param disable_relative_volume: Whether to disable relative volume.
@@ -2013,13 +2014,13 @@ class UpdateLight(ClientBoundPacket):
     :param chunk_z: The Z coordinate of the chunk.
     :type chunk_z: int
     :param sky_light_mask: A bitset containing bits for each section in the world + 2.
-    :type sky_light_mask: Bitset
+    :type sky_light_mask: :class:`~mcproto.types.Bitset`
     :param block_light_mask: A bitset containing bits for each section in the world + 2.
-    :type block_light_mask: Bitset
+    :type block_light_mask: :class:`~mcproto.types.Bitset`
     :param empty_sky_light_mask: A bitset containing bits for each section in the world + 2.
-    :type empty_sky_light_mask: Bitset
+    :type empty_sky_light_mask: :class:`~mcproto.types.Bitset`
     :param empty_block_light_mask: A bitset containing bits for each section in the world + 2.
-    :type empty_block_light_mask: Bitset
+    :type empty_block_light_mask: :class:`~mcproto.types.Bitset`
     :param sky_light_arrays: A list of sky light arrays.
     :type sky_light_arrays: list[bytes]
     :param block_light_arrays: A list of block light arrays.
@@ -2106,9 +2107,9 @@ class Login(ClientBoundPacket):
     :param do_limited_crafting: Whether players can only craft recipes they have already unlocked.
     :type do_limited_crafting: bool
     :param dimension_type: The type of dimension in the minecraft:dimension_type registry.
-    :type dimension_type: Identifier
+    :type dimension_type: :class:`~mcproto.types.Identifier`
     :param dimension_name: Name of the dimension being spawned into.
-    :type dimension_name: Identifier
+    :type dimension_name: :class:`~mcproto.types.Identifier`
     :param hashed_seed: First 8 bytes of the SHA-256 hash of the world's seed.
     :type hashed_seed: int
     :param game_mode: 0: Survival, 1: Creative, 2: Adventure, 3: Spectator.
@@ -2122,9 +2123,9 @@ class Login(ClientBoundPacket):
     instead of y=63.
     :type is_flat: bool
     :param death_dimension_name: Name of the dimension the player died in.
-    :type death_dimension_name: Identifier, optional
+    :type death_dimension_name: :class:`~mcproto.types.Identifier`, optional
     :param death_location: The location that the player died at.
-    :type death_location: Position, optional
+    :type death_location: :class:`~mcproto.types.Position`, optional
     :param portal_cooldown: The number of ticks until the player can use the portal again.
     :type portal_cooldown: int
 
@@ -2489,9 +2490,9 @@ class UpdateEntityPositionAndRotation(ClientBoundPacket):
     :param delta_z: Change in Z position as (currentZ * 32 - prevZ * 32) * 128.
     :type delta_z: int
     :param yaw: New angle, not a delta.
-    :type yaw: Angle
+    :type yaw: :class:`~mcproto.types.Angle`
     :param pitch: New angle, not a delta.
-    :type pitch: Angle
+    :type pitch: :class:`~mcproto.types.Angle`
     :param on_ground: Whether the entity is on the ground.
     :type on_ground: bool
     """
@@ -2548,9 +2549,9 @@ class UpdateEntityRotation(ClientBoundPacket):
     :param entity_id: The ID of the entity.
     :type entity_id: int
     :param yaw: New angle, not a delta.
-    :type yaw: Angle
+    :type yaw: :class:`~mcproto.types.Angle`
     :param pitch: New angle, not a delta.
-    :type pitch: Angle
+    :type pitch: :class:`~mcproto.types.Angle`
     :param on_ground: Whether the entity is on the ground.
     :type on_ground: bool
     """
@@ -2669,7 +2670,7 @@ class OpenScreen(ClientBoundPacket):
     for the different values.
     :type window_type: int
     :param window_title: The title of the window.
-    :type window_title: TextComponent
+    :type window_title: :class:`~mcproto.types.TextComponent`
     """
 
     PACKET_ID: ClassVar[int] = 0x33
@@ -2705,7 +2706,7 @@ class OpenSignEditor(ClientBoundPacket):
     Initialize the OpenSignEditor packet.
 
     :param location: The position of the sign.
-    :type location: Position
+    :type location: :class:`~mcproto.types.Position`
     :param is_front_text: Whether the opened editor is for the front or on the back of the sign.
     :type is_front_text: bool
     """
@@ -2798,7 +2799,7 @@ class PlaceGhostRecipe(ClientBoundPacket):
     :param window_id: The ID of the window.
     :type window_id: int
     :param recipe: The recipe ID.
-    :type recipe: Identifier
+    :type recipe: :class:`~mcproto.types.Identifier`
     """
 
     PACKET_ID: ClassVar[int] = 0x37
@@ -2891,7 +2892,7 @@ class PlayerChatMessage(ClientBoundPacket):
     Initialize the PlayerChatMessage packet.
 
     :param sender: The UUID of the sender.
-    :type sender: UUID
+    :type sender: :class:`mcproto.types.UUID`
     :param index: The index of the message.
     :type index: int
     :param message_signature_bytes: The message signature bytes.
@@ -2905,18 +2906,18 @@ class PlayerChatMessage(ClientBoundPacket):
     :param previous_messages: A list of previous messages.
     :type previous_messages: list[tuple[int, bytes]]
     :param unsigned_content: The unsigned content. Only present if unsigned_content_present is True.
-    :type unsigned_content: TextComponent, optional
+    :type unsigned_content: :class:`~mcproto.types.TextComponent`, optional
     :param filter_type: The type of filtering applied to the message.
     :type filter_type: int
     :param filter_type_bits: The bits specifying the indexes at which characters in the original message string should
     be replaced with the # symbol. Only present if filter_type is 2.
-    :type filter_type_bits: BitSet, optional
+    :type filter_type_bits: :class:`~mcproto.types.BitSet`, optional
     :param chat_formatting: The type of chat in the minecraft:chat_type registry.
     :type chat_formatting: int
     :param sender_name: The name of the one sending the message.
-    :type sender_name: TextComponent
+    :type sender_name: :class:`~mcproto.types.TextComponent`
     :param target_name: The name of the one receiving the message.
-    :type target_name: TextComponent, optional
+    :type target_name: :class:`~mcproto.types.TextComponent`, optional
     """
 
     PACKET_ID: ClassVar[int] = 0x37
@@ -3063,7 +3064,7 @@ class CombatDeath(ClientBoundPacket):
     :param player_id: The entity ID of the player that died.
     :type player_id: int
     :param message: The death message.
-    :type message: TextComponent
+    :type message: :class:`~mcproto.types.TextComponent`
     """
 
     PACKET_ID: ClassVar[int] = 0x3C
@@ -3807,7 +3808,7 @@ class AddResourcePack(ClientBoundPacket):
     Initialize the AddResourcePack packet.
 
     :param uuid: The unique identifier of the resource pack.
-    :type uuid: UUID
+    :type uuid: :class:`mcproto.types.UUID`
     :param url: The URL to the resource pack.
     :type url: str
     :param hash_sha1: A 40 character hexadecimal, case-insensitive SHA-1 hash of the resource pack file. If it's not
@@ -3819,7 +3820,7 @@ class AddResourcePack(ClientBoundPacket):
     :type forced: bool
     :param prompt_message: This is shown in the prompt making the client accept or decline the resource pack. Only
     present if 'Has Prompt Message' is true.
-    :type prompt_message: TextComponent, optional
+    :type prompt_message: :class:`~mcproto.types.TextComponent`, optional
     """
 
     PACKET_ID: ClassVar[int] = 0x46
@@ -3881,7 +3882,7 @@ class Respawn(ClientBoundPacket):
     Registry Data packet.
     :type dimension_type: int
     :param dimension_name: Name of the dimension being spawned into.
-    :type dimension_name: Identifier
+    :type dimension_name: :class:`~mcproto.types.Identifier`
     :param hashed_seed: First 8 bytes of the SHA-256 hash of the world's seed. Used client side for biome noise.
     :type hashed_seed: int
     :param game_mode: 0: Survival, 1: Creative, 2: Adventure, 3: Spectator.
@@ -3896,9 +3897,9 @@ class Respawn(ClientBoundPacket):
     instead of y=63.
     :type is_flat: bool
     :param death_dimension_name: Name of the dimension the player died in.
-    :type death_dimension_name: Identifier, optional
+    :type death_dimension_name: :class:`~mcproto.types.Identifier`, optional
     :param death_location: The location that the player died at.
-    :type death_location: Position, optional
+    :type death_location: :class:`~mcproto.types.Position`, optional
     :param portal_cooldown: The number of ticks until the player can use the portal again.
     :type portal_cooldown: int
     :param data_kept: Bit mask. 0x01: Keep attributes, 0x02: Keep metadata. Tells which data should be kept on the
@@ -3984,7 +3985,7 @@ class SetHeadRotation(ClientBoundPacket):
     :param entity_id: The ID of the entity.
     :type entity_id: int
     :param head_yaw: New angle, not a delta.
-    :type head_yaw: Angle
+    :type head_yaw: :class:`~mcproto.types.Angle`
     """
 
     PACKET_ID: ClassVar[int] = 0x48
@@ -4102,7 +4103,7 @@ class SelectAdvancementsTab(ClientBoundPacket):
     Initialize the SelectAdvancementsTab packet.
 
     :param identifier: The identifier of the advancement tab to switch to.
-    :type identifier: Identifier, optional
+    :type identifier: :class:`~mcproto.types.Identifier`, optional
     """
 
     PACKET_ID: ClassVar[int] = 0x4A
@@ -4129,7 +4130,7 @@ class ServerData(ClientBoundPacket):
     Initialize the ServerData packet.
 
     :param motd: The server's MOTD.
-    :type motd: TextComponent
+    :type motd: :class:`~mcproto.types.TextComponent`
     :param icon: The server's icon in the PNG format. Only present if 'Has Icon' is true.
     :type icon: bytes, optional
     """
@@ -4168,7 +4169,7 @@ class SetActionBarText(ClientBoundPacket):
     Initialize the SetActionBarText packet.
 
     :param action_bar_text: The text to display above the hotbar.
-    :type action_bar_text: TextComponent
+    :type action_bar_text: :class:`~mcproto.types.TextComponent`
     """
 
     PACKET_ID: ClassVar[int] = 0x4C
@@ -4472,7 +4473,7 @@ class SetDefaultSpawnPosition(ClientBoundPacket):
     Initialize the SetDefaultSpawnPosition packet.
 
     :param location: Spawn location.
-    :type location: Position
+    :type location: :class:`~mcproto.types.Position`
     :param angle: The angle at which to respawn at.
     :type angle: float
     """
@@ -4793,14 +4794,14 @@ class UpdateObjectives(ClientBoundPacket):
     :param mode: 0 to create the scoreboard. 1 to remove the scoreboard. 2 to update the display text.
     :type mode: int
     :param objective_value: The text to be displayed for the score. Only if mode is 0 or 2.
-    :type objective_value: TextComponent, optional
+    :type objective_value: :class:`~mcproto.types.TextComponent`, optional
     :param objective_type: 0 = "integer", 1 = "hearts". Only if mode is 0 or 2.
     :type objective_type: int, optional
     :param number_format: Determines how the score number should be formatted. Only if mode is 0 or 2 and the previous
     boolean is true.
     :type number_format: int, optional
     :param number_format_content: The text to be used as placeholder. Only if mode is 0 or 2 and number_format is 2.
-    :type number_format_content: TextComponent, optional
+    :type number_format_content: :class:`~mcproto.types.TextComponent`, optional
     """
 
     PACKET_ID: ClassVar[int] = 0x5E
@@ -5086,7 +5087,7 @@ class UpdateScore(ClientBoundPacket):
     boolean is true.
     :type number_format: int, optional
     :param number_format_content: The text to be used as placeholder. Only if mode is 0 or 2 and number_format is 2.
-    :type number_format_content: TextComponent, optional
+    :type number_format_content: :class:`~mcproto.types.TextComponent`, optional
     """
 
     PACKET_ID: ClassVar[int] = 0x61
@@ -5186,7 +5187,7 @@ class SetSubtitleText(ClientBoundPacket):
     Initialize the SetSubtitleText packet.
 
     :param subtitle_text: The subtitle text to display.
-    :type subtitle_text: TextComponent
+    :type subtitle_text: :class:`~mcproto.types.TextComponent`
     """
 
     PACKET_ID: ClassVar[int] = 0x63
@@ -5246,7 +5247,7 @@ class SetTitleText(ClientBoundPacket):
     Initialize the SetTitleText packet.
 
     :param title_text: The title text to display.
-    :type title_text: TextComponent
+    :type title_text: :class:`~mcproto.types.TextComponent`
     """
 
     PACKET_ID: ClassVar[int] = 0x65
@@ -5328,7 +5329,7 @@ class EntitySoundEffect(ClientBoundPacket):
     Identifier.
     :type sound_id: int
     :param sound_name: Only present if Sound ID is 0.
-    :type sound_name: Identifier, optional
+    :type sound_name: :class:`~mcproto.types.Identifier`, optional
     :param fixed_range: The fixed range of the sound. Only present if previous boolean is true and Sound ID is 0.
     :type fixed_range: float, optional
     :param sound_category: The category that this sound will be played from.
@@ -5409,13 +5410,13 @@ class SoundEffect(ClientBoundPacket):
     Identifier.
     :type sound_id: int
     :param sound_name: Only present if Sound ID is 0.
-    :type sound_name: Identifier, optional
+    :type sound_name: :class:`~mcproto.types.Identifier`, optional
     :param fixed_range: The fixed range of the sound. Only present if previous boolean is true and Sound ID is 0.
     :type fixed_range: float, optional
     :param sound_category: The category that this sound will be played from (current categories).
     :type sound_category: :class:`SoundCategories`
     :param position: The position of the sound effect. (Will be rounded down to 3 binary places)
-    :type position: Vec3
+    :type position: :class:`~mcproto.types.Vec3`
     :param volume: 1.0 is 100%, capped between 0.0 and 1.0 by Notchian clients.
     :type volume: float
     :param pitch: Float between 0.5 and 2.0 by Notchian clients.
@@ -5549,7 +5550,7 @@ class StoreCookie(ClientBoundPacket):
     Initialize the StoreCookie packet.
 
     :param key: The identifier of the cookie.
-    :type key: Identifier
+    :type key: :class:`~mcproto.types.Identifier`
     :param payload: The data of the cookie.
     :type payload: bytes
     """
@@ -5583,7 +5584,7 @@ class SystemChatMessage(ClientBoundPacket):
     Initialize the SystemChatMessage packet.
 
     :param content: The content of the message.
-    :type content: TextComponent
+    :type content: :class:`~mcproto.types.TextComponent`
     :param overlay: Whether the message is an actionbar or chat message. See also #Set Action Bar Text.
     :type overlay: bool
     """
@@ -5617,9 +5618,9 @@ class SetTabListHeaderAndFooter(ClientBoundPacket):
     Initialize the SetTabListHeaderAndFooter packet.
 
     :param header: To remove the header, send a empty text component: {"text":""}.
-    :type header: TextComponent
+    :type header: :class:`~mcproto.types.TextComponent`
     :param footer: To remove the footer, send a empty text component: {"text":""}.
-    :type footer: TextComponent
+    :type footer: :class:`~mcproto.types.TextComponent`
     """
 
     PACKET_ID: ClassVar[int] = 0x6D
@@ -5651,7 +5652,7 @@ class TagQueryResponse(ClientBoundPacket):
     :param transaction_id: Can be compared to the one sent in the original query packet.
     :type transaction_id: int
     :param nbt: The NBT of the block or entity. May be a TAG_END (0) in which case no NBT is present.
-    :type nbt: NBT
+    :type nbt: :class:`~mcproto.types.NBT`
     """
 
     PACKET_ID: ClassVar[int] = 0x6E
@@ -5730,11 +5731,11 @@ class TeleportEntity(ClientBoundPacket):
     :param entity_id: The ID of the entity.
     :type entity_id: int
     :param position: The new position of the entity.
-    :type position: Vec3
+    :type position: :class:`~mcproto.types.Vec3`
     :param yaw: The new yaw angle.
-    :type yaw: Angle
+    :type yaw: :class:`~mcproto.types.Angle`
     :param pitch: The new pitch angle.
-    :type pitch: Angle
+    :type pitch: :class:`~mcproto.types.Angle`
     :param on_ground: Whether the entity is on the ground.
     :type on_ground: bool
     """
@@ -6184,7 +6185,7 @@ class ProjectilePower(ClientBoundPacket):
     :param entity_id: The ID of the projectile entity.
     :type entity_id: int
     :param power: The power of the projectile.
-    :type power: Vec3
+    :type power: :class:`~mcproto.types.Vec3`
     """
 
     PACKET_ID: ClassVar[int] = 0x79
@@ -6204,3 +6205,83 @@ class ProjectilePower(ClientBoundPacket):
         entity_id = buf.read_varint()
         power = Vec3.deserialize_double(buf)
         return cls(entity_id=entity_id, power=power)
+
+
+@final
+@define
+class CustomReportDetails(ClientBoundPacket):
+    """Text entries included in any crash report generated during connection to the server. (Client -> Server).
+
+    Initialize the CustomReportDetails packet.
+
+    :param details: A list of key-value text entries.
+    :type details: list[tuple[str, str]]
+    """
+
+    PACKET_ID: ClassVar[int] = 0x7A
+    GAME_STATE: ClassVar[GameState] = GameState.CONFIGURATION
+
+    details: list[tuple[str, str]]
+
+    @override
+    def serialize_to(self, buf: Buffer) -> None:
+        buf.write_varint(len(self.details))
+        for title, description in self.details:
+            buf.write_utf(title)
+            buf.write_utf(description)
+
+    @override
+    @classmethod
+    def _deserialize(cls, buf: Buffer, /) -> Self:
+        details_count = buf.read_varint()
+        details: list[tuple[str, str]] = []
+        for _ in range(details_count):
+            title = buf.read_utf()
+            description = buf.read_utf()
+            details.append((title, description))
+        return cls(details=details)
+
+
+@final
+@define
+class ServerLinks(ClientBoundPacket):
+    """List of links that the Notchian client will display in the pause menu. (Client -> Server).
+
+    Initialize the ServerLinks packet.
+
+    :param links: A list of links.
+    :type links: list[
+        tuple[:class:`~mcproto.packets.configuration.ServerLinkType` | :class:`~mcproto.types.TextComponent`, str]]
+    """
+
+    PACKET_ID: ClassVar[int] = 0x7B
+    GAME_STATE: ClassVar[GameState] = GameState.CONFIGURATION
+
+    links: list[tuple[ServerLinksType | TextComponent, str]]
+
+    @override
+    def serialize_to(self, buf: Buffer) -> None:
+        buf.write_varint(len(self.links))
+        for label, url in self.links:
+            is_builtin = isinstance(label, ServerLinksType)
+            buf.write_value(StructFormat.BYTE, int(is_builtin))
+            if is_builtin:
+                buf.write_varint(label.value)
+            else:
+                label.serialize_to(buf)
+            buf.write_utf(url)
+
+    @override
+    @classmethod
+    def _deserialize(cls, buf: Buffer, /) -> Self:
+        links_count = buf.read_varint()
+        links: list[tuple[ServerLinksType | TextComponent, str]] = []
+        for _ in range(links_count):
+            is_builtin = bool(buf.read_value(StructFormat.BYTE))
+            if is_builtin:
+                label = ServerLinksType(buf.read_varint())
+            else:
+                label = TextComponent.deserialize(buf)
+            url = buf.read_utf()
+            links.append((label, url))
+        return cls(links=links)

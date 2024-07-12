@@ -15,6 +15,7 @@ from mcproto.packets.configuration.configuration import (
     RemoveResourcePack,
     ResourcePackResponse,
     ResourcePackResult,
+    ServerLinksType,
     ServerboundKeepAlive,
     ServerboundPluginMessage,
     UpdateTags,
@@ -38,4 +39,5 @@ __all__ = [
     "Pong",
     "ResourcePackResult",
     "ResourcePackResponse",
+    "ServerLinksType",
 ]

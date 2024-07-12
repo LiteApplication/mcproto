@@ -12,7 +12,7 @@ from mcproto.protocol.base_io import StructFormat
 from mcproto.types.chat import TextComponent
 from mcproto.types.identifier import Identifier
 from mcproto.types.nbt import CompoundNBT
-from mcproto.types.tag import RegistryTag
+from mcproto.types.registry_tag import RegistryTag
 from mcproto.types.uuid import UUID
 
 __all__ = [
@@ -38,6 +38,33 @@ __all__ = [
 
 @final
 @define
+class CookieRequest(ClientBoundPacket):
+    """Requests a cookie that was previously stored. (Client -> Server).
+
+    Initialize the CookieRequest packet.
+
+    :param key: The identifier of the cookie.
+    :type key: :class:`~mcproto.types.Identifier`
+    """
+
+    PACKET_ID: ClassVar[int] = 0x00
+    GAME_STATE: ClassVar[GameState] = GameState.CONFIGURATION
+
+    key: Identifier
+
+    @override
+    def serialize_to(self, buf: Buffer) -> None:
+        self.key.serialize_to(buf)
+
+    @override
+    @classmethod
+    def _deserialize(cls, buf: Buffer, /) -> Self:
+        key = Identifier.deserialize(buf)
+        return cls(key=key)
+
+
+@final
+@define
 class ClientboundPluginMessage(ClientBoundPacket):
     """Mods and plugins can use this to send their data. (Server -> Client).
 
@@ -46,12 +73,12 @@ class ClientboundPluginMessage(ClientBoundPacket):
     Initialize the ClientboundPluginMessage packet.
 
     :param channel: Name of the plugin channel used to send the data.
-    :type channel: Identifier
+    :type channel: :class:`~mcproto.types.Identifier`
     :param data: Any data.
     :type data: bytes
     """
 
-    PACKET_ID: ClassVar[int] = 0x0
+    PACKET_ID: ClassVar[int] = 0x1
     GAME_STATE: ClassVar[GameState] = GameState.CONFIGURATION
 
     channel: Identifier
@@ -78,10 +105,10 @@ class Disconnect(ClientBoundPacket):
     Initialize the Disconnect packet.
 
     :param reason: The reason why the player was disconnected.
-    :type reason: TextComponent
+    :type reason: :class:`~mcproto.types.TextComponent`
     """
 
-    PACKET_ID: ClassVar[int] = 0x1
+    PACKET_ID: ClassVar[int] = 0x2
     GAME_STATE: ClassVar[GameState] = GameState.CONFIGURATION
 
     reason: TextComponent
@@ -102,14 +129,12 @@ class Disconnect(ClientBoundPacket):
 class FinishConfiguration(ClientBoundPacket):
     """Sent by the server to notify the client that the configuration process has finished. (Server -> Client).
 
-    The client answers with Acknowledge Finish Configuration whenever it is ready to continue.
+    The client answers with :class:`AcknowledgeFinishConfiguration` whenever it is ready to continue.
 
     Initialize the FinishConfiguration packet.
-
-
     """
 
-    PACKET_ID: ClassVar[int] = 0x2
+    PACKET_ID: ClassVar[int] = 0x3
     GAME_STATE: ClassVar[GameState] = GameState.CONFIGURATION
 
     @override
@@ -127,13 +152,12 @@ class FinishConfiguration(ClientBoundPacket):
 class ClientboundKeepAlive(ClientBoundPacket):
     """The server will frequently send out a keep-alive, each containing a random ID. (Server -> Client).
 
-    The client must respond with the same payload (see Serverbound Keep Alive). If the client does not
+    The client must respond with the same payload (see :class:`ServerboundKeepAlive`). If the client does not
     respond to a Keep Alive packet within 15 seconds after it was sent, the server kicks the client.
     Vice versa, if the server does not send any keep-alives for 20 seconds, the client will disconnect and
     yields a 'Timed out' exception.
 
-    The Notchian server uses a system-dependent time in milliseconds to
-    generate the keep alive ID value.
+    The Notchian server uses a system-dependent time in milliseconds to generate the keep alive ID value.
 
     Initialize the ClientboundKeepAlive packet.
 
@@ -141,7 +165,7 @@ class ClientboundKeepAlive(ClientBoundPacket):
     :type keep_alive_id: int
     """
 
-    PACKET_ID: ClassVar[int] = 0x3
+    PACKET_ID: ClassVar[int] = 0x4
     GAME_STATE: ClassVar[GameState] = GameState.CONFIGURATION
 
     keep_alive_id: int
@@ -170,7 +194,7 @@ class Ping(ClientBoundPacket):
     :type payload: int
     """
 
-    PACKET_ID: ClassVar[int] = 0x4
+    PACKET_ID: ClassVar[int] = 0x5
     GAME_STATE: ClassVar[GameState] = GameState.CONFIGURATION
 
     payload: int
@@ -188,16 +212,37 @@ class Ping(ClientBoundPacket):
 
 @final
 @define
+class ResetChat(ClientBoundPacket):
+    """Reset the chat. (Server -> Client).
+
+    Initialize the Ping packet.
+    """
+
+    PACKET_ID: ClassVar[int] = 0x6
+    GAME_STATE: ClassVar[GameState] = GameState.CONFIGURATION
+
+    @override
+    def serialize_to(self, buf: Buffer) -> None:
+        pass
+
+    @override
+    @classmethod
+    def _deserialize(cls, buf: Buffer, /) -> Self:
+        return cls()
+
+
+@final
+@define
 class RegistryData(ClientBoundPacket):
     """Represents certain registries that are sent from the server and are applied on the client. (Server -> Client).
 
     Initialize the RegistryData packet.
 
     :param registry_codec: The registry data.
-    :type registry_codec: CompoundNBT
+    :type registry_codec: :class:`~mcproto.types.CompoundNBT`
     """
 
-    PACKET_ID: ClassVar[int] = 0x5
+    PACKET_ID: ClassVar[int] = 0x7
     GAME_STATE: ClassVar[GameState] = GameState.CONFIGURATION
 
     registry_codec: CompoundNBT
@@ -227,7 +272,7 @@ class RemoveResourcePack(ClientBoundPacket):
     :type uuid: :class:`UUID`, optional
     """
 
-    PACKET_ID: ClassVar[int] = 0x6
+    PACKET_ID: ClassVar[int] = 0x8
     GAME_STATE: ClassVar[GameState] = GameState.CONFIGURATION
 
     uuid: UUID | None
@@ -251,7 +296,7 @@ class AddResourcePack(ClientBoundPacket):
     Initialize the AddResourcePack packet.
 
     :param uuid: The unique identifier of the resource pack.
-    :type uuid: UUID
+    :type uuid: :class:`mcproto.types.UUID`
     :param url: The URL to the resource pack.
     :type url: str
     :param hash_sha1: A 40 character hexadecimal, case-insensitive SHA-1 hash of the resource pack file. If it's not
@@ -263,10 +308,10 @@ class AddResourcePack(ClientBoundPacket):
     :type forced: bool
     :param prompt_message: This is shown in the prompt making the client accept or decline the resource pack. Only
     present if 'Has Prompt Message' is true.
-    :type prompt_message: TextComponent, optional
+    :type prompt_message: :class:`~mcproto.types.TextComponent`, optional
     """
 
-    PACKET_ID: ClassVar[int] = 0x7
+    PACKET_ID: ClassVar[int] = 0x9
     GAME_STATE: ClassVar[GameState] = GameState.CONFIGURATION
 
     uuid: UUID = field()
@@ -313,16 +358,84 @@ class AddResourcePack(ClientBoundPacket):
 
 @final
 @define
+class StoreCookie(ClientBoundPacket):
+    """Stores some arbitrary data on the client, which persists between server transfers. (Client -> Server).
+
+    The Notchian client only accepts cookies of up to 5 kiB in size.
+
+    Initialize the StoreCookie packet.
+
+    :param key: The identifier of the cookie.
+    :type key: :class:`~mcproto.types.Identifier`
+    :param payload: The data of the cookie.
+    :type payload: bytes
+    """
+
+    PACKET_ID: ClassVar[int] = 0x0A
+    GAME_STATE: ClassVar[GameState] = GameState.CONFIGURATION
+
+    key: Identifier
+    payload: bytes
+
+    @override
+    def serialize_to(self, buf: Buffer) -> None:
+        self.key.serialize_to(buf)
+        buf.write_bytearray(self.payload)
+
+    @override
+    @classmethod
+    def _deserialize(cls, buf: Buffer, /) -> Self:
+        key = Identifier.deserialize(buf)
+        payload = bytes(buf.read_bytearray())
+        return cls(key=key, payload=payload)
+
+
+@final
+@define
+class Transfer(ClientBoundPacket):
+    """Notifies the client that it should transfer to the given server. (Client -> Server).
+
+    Cookies previously stored are preserved between server transfers.
+
+    Initialize the Transfer packet.
+
+    :param host: The hostname or IP of the server.
+    :type host: str
+    :param port: The port of the server.
+    :type port: int
+    """
+
+    PACKET_ID: ClassVar[int] = 0x0B
+    GAME_STATE: ClassVar[GameState] = GameState.CONFIGURATION
+
+    host: str
+    port: int
+
+    @override
+    def serialize_to(self, buf: Buffer) -> None:
+        buf.write_utf(self.host)
+        buf.write_varint(self.port)
+
+    @override
+    @classmethod
+    def _deserialize(cls, buf: Buffer, /) -> Self:
+        host = buf.read_utf()
+        port = buf.read_varint()
+        return cls(host=host, port=port)
+
+
+@final
+@define
 class FeatureFlags(ClientBoundPacket):
     """Used to enable and disable features, generally experimental ones, on the client. (Server -> Client).
 
     Initialize the FeatureFlags packet.
 
     :param flags: Array of Identifier.
-    :type flags: Identifier
+    :type flags: :class:`~mcproto.types.Identifier`
     """
 
-    PACKET_ID: ClassVar[int] = 0x8
+    PACKET_ID: ClassVar[int] = 0xC
     GAME_STATE: ClassVar[GameState] = GameState.CONFIGURATION
 
     flags: list[Identifier]
@@ -363,7 +476,7 @@ class UpdateTags(ClientBoundPacket):
 
     """
 
-    PACKET_ID: ClassVar[int] = 0x9
+    PACKET_ID: ClassVar[int] = 0xD
     GAME_STATE: ClassVar[GameState] = GameState.CONFIGURATION
 
     mapping: dict[Identifier, list[RegistryTag]]
@@ -395,8 +508,142 @@ class UpdateTags(ClientBoundPacket):
 
 @final
 @define
-class ClientInformation(ClientBoundPacket):
-    """Sent when the player connects, or when settings are changed. (Server -> Client).
+class ClientboundKnownPacks(ClientBoundPacket):
+    """Informs the client of which data packs are present on the server. (Client -> Server).
+
+    The client is expected to respond with its own :class:`ServerboundKnownPacks` packet. The Notchian server does not
+    continue with Configuration until it receives a response.
+
+    Initialize the ClientboundKnownPacks packet.
+
+    :param known_packs: A list of known packs.
+    :type known_packs: list[tuple[str, str, str]]
+    """
+
+    PACKET_ID: ClassVar[int] = 0x0E
+    GAME_STATE: ClassVar[GameState] = GameState.CONFIGURATION
+
+    known_packs: list[tuple[str, str, str]]
+
+    @override
+    def serialize_to(self, buf: Buffer) -> None:
+        buf.write_varint(len(self.known_packs))
+        for namespace, pack_id, version in self.known_packs:
+            buf.write_utf(namespace)
+            buf.write_utf(pack_id)
+            buf.write_utf(version)
+
+    @override
+    @classmethod
+    def _deserialize(cls, buf: Buffer, /) -> Self:
+        known_pack_count = buf.read_varint()
+        known_packs: list[tuple[str, str, str]] = []
+        for _ in range(known_pack_count):
+            namespace = buf.read_utf()
+            pack_id = buf.read_utf()
+            version = buf.read_utf()
+            known_packs.append((namespace, pack_id, version))
+        return cls(known_packs=known_packs)
+
+
+@final
+@define
+class CustomReportDetails(ClientBoundPacket):
+    """Text entries included in any crash report generated during connection to the server. (Client -> Server).
+
+    Initialize the CustomReportDetails packet.
+
+    :param details: A list of key-value text entries.
+    :type details: list[tuple[str, str]]
+    """
+
+    PACKET_ID: ClassVar[int] = 0xF
+    GAME_STATE: ClassVar[GameState] = GameState.CONFIGURATION
+
+    details: list[tuple[str, str]]
+
+    @override
+    def serialize_to(self, buf: Buffer) -> None:
+        buf.write_varint(len(self.details))
+        for title, description in self.details:
+            buf.write_utf(title)
+            buf.write_utf(description)
+
+    @override
+    @classmethod
+    def _deserialize(cls, buf: Buffer, /) -> Self:
+        details_count = buf.read_varint()
+        details: list[tuple[str, str]] = []
+        for _ in range(details_count):
+            title = buf.read_utf()
+            description = buf.read_utf()
+            details.append((title, description))
+        return cls(details=details)
+
+
+class ServerLinksType(IntEnum):
+    """Built-in server link types."""
+
+    BUG_REPORT = 0
+    COMMUNITY_GUIDELINES = 1
+    SUPPORT = 2
+    STATUS = 3
+    FEEDBACK = 4
+    COMMUNITY = 5
+    WEBSITE = 6
+    FORUMS = 7
+    NEWS = 8
+    ANNOUNCEMENTS = 9
+
+
+@final
+@define
+class ServerLinks(ClientBoundPacket):
+    """List of links that the Notchian client will display in the pause menu. (Client -> Server).
+
+    Initialize the ServerLinks packet.
+
+    :param links: A list of links.
+    :type links: list[tuple[bool, :class:`ServerLinkType` | :class:`~mcproto.types.TextComponent`, str]]
+    """
+
+    PACKET_ID: ClassVar[int] = 0x10
+    GAME_STATE: ClassVar[GameState] = GameState.CONFIGURATION
+
+    links: list[tuple[ServerLinksType | TextComponent, str]]
+
+    @override
+    def serialize_to(self, buf: Buffer) -> None:
+        buf.write_varint(len(self.links))
+        for label, url in self.links:
+            is_builtin = isinstance(label, ServerLinksType)
+            buf.write_value(StructFormat.BYTE, int(is_builtin))
+            if is_builtin:
+                buf.write_varint(label.value)
+            else:
+                label.serialize_to(buf)
+            buf.write_utf(url)
+
+    @override
+    @classmethod
+    def _deserialize(cls, buf: Buffer, /) -> Self:
+        links_count = buf.read_varint()
+        links: list[tuple[ServerLinksType | TextComponent, str]] = []
+        for _ in range(links_count):
+            is_builtin = bool(buf.read_value(StructFormat.BYTE))
+            if is_builtin:
+                label = ServerLinksType(buf.read_varint())
+            else:
+                label = TextComponent.deserialize(buf)
+            url = buf.read_utf()
+            links.append((label, url))
+        return cls(links=links)
+
+
+@final
+@define
+class ClientInformation(ServerBoundPacket):
+    """Sent when the player connects, or when settings are changed. (Client -> Server).
 
     Initialize the ClientInformation packet.
 
@@ -472,7 +719,7 @@ class ServerboundPluginMessage(ServerBoundPacket):
     Initialize the ServerboundPluginMessage packet.
 
     :param channel: Name of the plugin channel used to send the data.
-    :type channel: Identifier
+    :type channel: :class:`~mcproto.types.Identifier`
     :param data: Data sent by the plugin (length inferred from packet size). Maximum length: 32767 bytes.
     :type data: bytes
     """
@@ -498,8 +745,8 @@ class ServerboundPluginMessage(ServerBoundPacket):
 
 @final
 @define
-class AcknowledgeFinishConfiguration(ClientBoundPacket):
-    """Sent by the client to acknowledge the configuration process is finished. (Server -> Client).
+class AcknowledgeFinishConfiguration(ServerBoundPacket):
+    """Sent by the client to acknowledge the configuration process is finished. (Client -> Server).
 
     Initialize the AcknowledgeFinishConfiguration packet.
     """
@@ -546,8 +793,8 @@ class ServerboundKeepAlive(ServerBoundPacket):
 
 @final
 @define
-class Pong(ClientBoundPacket):
-    """Response to the server's ping packet with the same ID. (Server -> Client).
+class Pong(ServerBoundPacket):
+    """Response to the server's ping packet with the same ID. (Client -> Server).
 
     Initialize the Pong packet.
 
@@ -586,8 +833,8 @@ class ResourcePackResult(IntEnum):
 
 @final
 @define
-class ResourcePackResponse(ClientBoundPacket):
-    """Server's response to the client's resource pack request. (Server -> Client).
+class ResourcePackResponse(ServerBoundPacket):
+    """Client's response to the server's :class:`AddResourcePack` packet. (Client -> Server).
 
     Initialize the ResourcePackResponse packet.
 
@@ -614,3 +861,45 @@ class ResourcePackResponse(ClientBoundPacket):
         uuid = buf.read_optional(lambda: UUID.deserialize(buf))
         result = ResourcePackResult(buf.read_varint())
         return cls(uuid=uuid, result=result)
+
+
+@final
+@define
+class ServerboundKnownPacks(ServerBoundPacket):
+    """Informs the server of which data packs are present on the client. (Client -> Server).
+
+    The client sends this in response to Clientbound Known Packs.
+
+    If the client specifies a pack in this packet, the server should omit its contained data from the
+    :class:`RegistryData` packet.
+
+    Initialize the ServerboundKnownPacks packet.
+
+    :param known_packs: A list of known packs.
+    :type known_packs: list[tuple[str, str, str]]
+    """
+
+    PACKET_ID: ClassVar[int] = 0x07
+    GAME_STATE: ClassVar[GameState] = GameState.CONFIGURATION
+
+    known_packs: list[tuple[str, str, str]]
+
+    @override
+    def serialize_to(self, buf: Buffer) -> None:
+        buf.write_varint(len(self.known_packs))
+        for namespace, pack_id, version in self.known_packs:
+            buf.write_utf(namespace)
+            buf.write_utf(pack_id)
+            buf.write_utf(version)
+
+    @override
+    @classmethod
+    def _deserialize(cls, buf: Buffer, /) -> Self:
+        known_pack_count = buf.read_varint()
+        known_packs: list[tuple[str, str, str]] = []
+        for _ in range(known_pack_count):
+            namespace = buf.read_utf()
+            pack_id = buf.read_utf()
+            version = buf.read_utf()
+            known_packs.append((namespace, pack_id, version))
+        return cls(known_packs=known_packs)

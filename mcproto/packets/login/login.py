@@ -35,7 +35,7 @@ class LoginStart(ServerBoundPacket):
 
     :param username: Username of the client who sent the request.
     :param uuid: UUID of the player logging in (unused by the server)
-    :type uuid: :class:`~mcproto.types.UUID`
+    :type uuid: :class:`mcproto.types.UUID`
     """
 
     PACKET_ID: ClassVar[int] = 0x00
@@ -138,7 +138,7 @@ class LoginSuccess(ClientBoundPacket):
     Initialize the LoginSuccess packet.
 
     :param uuid: The UUID of the connecting player/client.
-    :type uuid: :class:`~mcproto.types.UUID`
+    :type uuid: :class:`mcproto.types.UUID`
     :param username: The username of the connecting player/client.
     :type username: str
     """

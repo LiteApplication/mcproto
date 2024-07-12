@@ -24,7 +24,7 @@ from mcproto.packets.configuration import (
 from mcproto.types.chat import TextComponent
 from mcproto.types.identifier import Identifier
 from mcproto.types.nbt import CompoundNBT, StringNBT
-from mcproto.types.tag import RegistryTag
+from mcproto.types.registry_tag import RegistryTag
 from mcproto.types.uuid import UUID
 from tests.helpers import ExcTest, gen_serializable_test
 

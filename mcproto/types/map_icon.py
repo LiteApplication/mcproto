@@ -53,7 +53,7 @@ class MapIcon(MCType):
     """Represents a map icon.
 
     :param type: The type of the icon.
-    :type type: IconType
+    :type type: :class:`~mcproto.types.IconType`
     :param x: The x-coordinate of the icon.
     :type x: int
     :param z: The z-coordinate of the icon.

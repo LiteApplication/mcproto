@@ -18,11 +18,11 @@ class BlockEntity(MCType):
     """Represents a block entity (e.g. a chest, furnace, banner, etc.).
 
     :param position: The position of the block entity relative to its chunk.
-    :type position: Position
+    :type position: :class:`~mcproto.types.Position`
     :param block_type: The type of the block entity.
     :type block_type: int
     :param nbt: The NBT data of the block entity.
-    :type nbt: CompoundNBT
+    :type nbt: :class:`~mcproto.types.CompoundNBT`
 
     .. warning:: The position must be within the chunk.
     .. note:: This class is used in the :class:`~mcproto.packets.play.ChunkData` packet.

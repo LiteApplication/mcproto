@@ -7,7 +7,7 @@ from mcproto.types.chat import JSONTextComponent, RawTextComponent, TextComponen
 from mcproto.types.identifier import Identifier
 from mcproto.types.nbt import CompoundNBT, ListNBT, NBTag
 from mcproto.types.quaternion import Quaternion
-from mcproto.types.tag import RegistryTag
+from mcproto.types.registry_tag import RegistryTag
 from mcproto.types.uuid import UUID
 from mcproto.types.vec3 import Position, Vec3
 
