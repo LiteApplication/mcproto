@@ -10,6 +10,7 @@ from typing_extensions import Self, override
 
 from mcproto.buffer import Buffer
 from mcproto.packets.packet import ClientBoundPacket, GameState, ServerBoundPacket
+from mcproto.types import Identifier
 from mcproto.types.chat import JSONTextComponent
 from mcproto.types.uuid import UUID
 
@@ -302,3 +303,64 @@ class CustomQuery(ClientBoundPacket):
         channel = buf.read_utf()
         data = bytes(buf.read(buf.remaining))  # All of the remaining data in the buffer
         return cls(message_id, channel, data)
+
+
+@final
+@define
+class CookieRequest(ClientBoundPacket):
+    """Requests a cookie that was previously stored. (Server -> Client).
+
+    Initialize the CookieRequest packet.
+
+    :param key: The identifier of the cookie.
+    :type key: :class:`~mcproto.types.Identifier`
+    """
+
+    PACKET_ID: ClassVar[int] = 0x5
+    GAME_STATE: ClassVar[GameState] = GameState.LOGIN
+
+    key: Identifier
+
+    @override
+    def serialize_to(self, buf: Buffer) -> None:
+        self.key.serialize_to(buf)
+
+    @override
+    @classmethod
+    def _deserialize(cls, buf: Buffer, /) -> Self:
+        key = Identifier.deserialize(buf)
+        return cls(key=key)
+
+
+@final
+@define
+class CookieResponse(ServerBoundPacket):
+    """Response to a Cookie Request from the server. (Client -> Server).
+
+    The Notchian server only accepts responses of up to 5 kiB in size.
+
+    Initialize the CookieResponse packet.
+
+    :param key: The identifier of the cookie.
+    :type key: bytes
+    :param payload: The data of the cookie, if any.
+    :type payload: bytes | None
+    """
+
+    PACKET_ID: ClassVar[int] = 0x4
+    GAME_STATE: ClassVar[GameState] = GameState.LOGIN
+
+    key: Identifier
+    payload: bytes | None
+
+    @override
+    def serialize_to(self, buf: Buffer) -> None:
+        self.key.serialize_to(buf)
+        buf.write_optional(self.payload, buf.write_bytearray)
+
+    @override
+    @classmethod
+    def _deserialize(cls, buf: Buffer, /) -> Self:
+        key = Identifier.deserialize(buf)
+        payload = buf.read_optional(lambda: bytes(buf.read_bytearray()))
+        return cls(key=key, payload=payload)

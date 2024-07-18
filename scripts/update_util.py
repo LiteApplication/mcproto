@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib
 import inspect
 import json
+import sys
 from difflib import get_close_matches
 from enum import Enum
 from pathlib import Path
@@ -14,14 +15,21 @@ from mcproto.packets import GameState, Packet
 from mcproto.packets.packet import ClientBoundPacket, ServerBoundPacket
 from scripts.entity_generator import format_ruff
 
-# The names of certain packets that are defined differently in our implementation
-# This is used to ignore name mismatches
-VOLUNTARY_PACKETS_NAMES = {
-    "Handshake": "Intention",  # Handshake os clearer
-    "LoginEncryptionResponse": "Key",  # That's just not explicit enough
-    "LoginEncryptionRequest": "Hello",  # Same packet name used in 2 different things
-    "LoginStart": "Hello",
-    "PingPong": "PongResponse",  # Used by both the client and the server
+# We want to ignore certain packet names when renaming/reporting them because Mojang's names are not explicit enough
+IGNORE_OUR_NAMES = {
+    "Handshake",  # Handshake is clearer
+    "LoginEncryptionResponse",  # That's just not explicit enough
+    "LoginEncryptionRequest",  # Same packet name used in 2 different things
+    "LoginStart",
+    "PingPong",  # Used by both the client and the server
+}
+
+IGNORE_MOJANG_NAMES = {
+    "Intention",  # Handshake is clearer
+    "Key",  # That's just not explicit enough
+    "Hello",  # Same packet name used in 2 different things
+    "PongResponse",  # Used by both the client and the server
+    "PingRequest",
 }
 
 GAME_STATES = [
@@ -53,7 +61,7 @@ INIT_FILES = {
 
 PACKET_TEMPLATE_INSERT = '''@final
 @define
-class {packet_name}({boundness}Packet):
+class {packet_name}({boundness}Packet): # TODO: IMPLEMENT THE PACKET
     """
 
     Initialize the {packet_name} packet.
@@ -73,7 +81,7 @@ class {packet_name}({boundness}Packet):
         raise NotImplementedError("This method is not implemented yet.")
 '''
 
-REPLACE_PACKET_ID_TEMPLATE = "PACKET_ID: ClassVar[int] = {packet_id}"
+REPLACE_PACKET_ID_TEMPLATE = "    PACKET_ID: ClassVar[int] = {packet_id}\n"
 
 
 Exportable: TypeAlias = Union[type[Packet], type[Enum]]
@@ -114,7 +122,7 @@ def report_error(message: str, game_state: GameState, boundness: Literal["client
             f"[{ANSI_COLORS['blue']}{game_state.name}{ANSI_COLORS['reset']} → {ANSI_COLORS['gray']}"
             f"{boundness[:6]}{ANSI_COLORS['reset']}]"
         )
-    print(f"{ANSI_COLORS['red']}Error:{ANSI_COLORS['reset']}", before, message)  # noqa: T201
+    print(before, message)  # noqa: T201
 
 
 @overload
@@ -238,16 +246,27 @@ def check_continuity(
     game_state: GameState,
     boundness: Literal["clientbound", "serverbound"],
 ) -> bool:
-    """Check if the packet ids are continuous. Return True if the packets are continuous."""
+    """Check if the packet ids are continuous and there are no duplicates.
+
+    Return True if the packets are continuous.
+    """
     packets = list(packets)
     packets.sort(key=lambda packet: packet.PACKET_ID)
     previous_packet: type[Packet] | None = None
     error = False
     for packet in packets:
-        if previous_packet is not None and previous_packet.PACKET_ID + 1 != packet.PACKET_ID:
+        if previous_packet is not None and previous_packet.PACKET_ID == packet.PACKET_ID:
             report_error(
-                f"{previous_packet.__name__} (ID: {hex(previous_packet.PACKET_ID)})"
-                f"-> {packet.__name__} (ID: {hex(packet.PACKET_ID)})",
+                f"Found a duplicate packet id: `{previous_packet.__name__}` and `{packet.__name__}`"
+                f" ({hex(packet.PACKET_ID)})",
+                game_state,
+                boundness,
+            )
+            error = True
+        elif previous_packet is not None and previous_packet.PACKET_ID + 1 != packet.PACKET_ID:
+            report_error(
+                f"{previous_packet.__name__} ({hex(previous_packet.PACKET_ID)})"
+                f"-> {packet.__name__} ({hex(packet.PACKET_ID)})",
                 game_state,
                 boundness,
             )
@@ -279,7 +298,12 @@ def check_redaction_order(
         file = inspect.getfile(packet)
         line = inspect.getsourcelines(packet)[1]
         if previous_packet is not None and previous_file == file and previous_line > line:
-            report_error(f"{previous_packet.__name__} is written after {packet.__name__}", game_state, boundness)
+            report_error(
+                f"`{previous_packet.__name__}` ({hex(previous_packet.PACKET_ID)}) "
+                f"is defined after `{packet.__name__}` ({hex(packet.PACKET_ID)}).",
+                game_state,
+                boundness,
+            )
             error = True
         previous_packet = packet
         previous_line = line
@@ -350,6 +374,8 @@ def compare_with_packet_definition(
     boundness: Literal["clientbound", "serverbound"],
     packets_file: str,
     replace_names: bool = False,
+    auto_insert: bool = False,
+    auto_change_packet_id: bool = False,
 ) -> None:
     """Compare the packets with the packet definition extracted from the packets file.
 
@@ -370,15 +396,15 @@ def compare_with_packet_definition(
     o_id_packets = {packet.PACKET_ID: packet.__name__ for packet in packets}
 
     # Try to find any packet that has the wrong name
-    expected_names = set(m_id_packets_new_name.values()).union(set(VOLUNTARY_PACKETS_NAMES.keys()))
+    expected_names = set(m_id_packets_new_name.values()).union(IGNORE_OUR_NAMES)
     for packet in packets:
         if packet.__name__ not in expected_names:
             closest = get_close_matches(packet.__name__, expected_names)
             by_id = m_id_packets_new_name.get(packet.PACKET_ID, None)
-            message = f"`{packet.__name__}` is not in the packets file"
-            if by_id is not None:
+            message = f"`{packet.__name__}` is not in the modules"
+            if by_id is not None:  # The packet is not in the packets file, but it is mentioned in the JSON file
                 message += f", but mentioned in the JSON file as `{by_id}`"
-            if closest:
+            if closest:  # Find the closest match (by name)
                 message += f". Did you mean `{'` or `'.join(closest)}`?"
             report_error(message, game_state, boundness)
             if by_id is not None:
@@ -391,18 +417,40 @@ def compare_with_packet_definition(
 
     # Check if there are any packets that are not defined in the packets modules
     for packet_id, packet_name in m_id_packets_new_name.items():
-        if packet_id not in o_id_packets:
-            if packet_name in set(o_id_packets.values()):
+        if packet_id not in o_id_packets:  # No packet with this ID
+            if packet_name in set(o_id_packets.values()):  # Found one with the same name
                 found_id = next(id_ for id_, name in o_id_packets.items() if name == packet_name)
+                if auto_change_packet_id:
+                    verbose_print(f"Automatically changing the packet id of {packet_name} to {hex(packet_id)}")
+                    packet = next(packet for packet in packets if packet.__name__ == packet_name)
+                    edit_packet_id(packet, packet_id)
+                else:
+                    report_error(
+                        f"`{packet_name}` has the wrong packet ID (should be"
+                        f" `{hex(packet_id)}`, found `{hex(found_id)}`).",
+                        game_state,
+                        boundness,
+                    )
+            elif auto_insert:  # Let's insert it
+                verbose_print(f"Automatically inserting the packet {packet_name} ({hex(packet_id)})")
+                insert_packet(game_state, boundness, packet_name, packet_id)
+            else:  # Cowardly refuse to insert it
                 report_error(
-                    f"`{packet_name}` has the wrong packet ID (should be"
-                    f" `{hex(packet_id)}`, found `{hex(found_id)}`).",
+                    f"`{packet_name}` ({hex(packet_id)}) is not defined in the packets modules.",
                     game_state,
                     boundness,
                 )
+        elif packet_name != o_id_packets[packet_id]:  # Check if the name is correct
+            if packet_name in IGNORE_MOJANG_NAMES or o_id_packets[packet_id] in IGNORE_OUR_NAMES:
+                continue
+            if auto_change_packet_id:
+                verbose_print(f"Automatically changing the packet id of {packet_name} to {hex(packet_id)}")
+                packet = next(packet for packet in packets if packet.__name__ == packet_name)
+                edit_packet_id(packet, packet_id)
             else:
                 report_error(
-                    f"`{packet_name}` ({hex(packet_id)}) is not defined in the packets modules.",
+                    f"`{packet_name}` has the wrong packet ID (should be"
+                    f" `{hex(packet_id)}`, found `{hex(packet_id)}`).",
                     game_state,
                     boundness,
                 )
@@ -427,6 +475,87 @@ def replace_occurrences(old: str, new: str) -> None:
                     f.write(line.replace(old, new))
 
 
+def edit_packet_id(packet: type[Packet], new_id: int) -> None:
+    """Edit the packet id of the given packet."""
+    file = inspect.getfile(packet)
+    first_line = inspect.getsourcelines(packet)[1]
+    line_search = REPLACE_PACKET_ID_TEMPLATE.format(packet_id="").strip()  # The template contains a new line
+    with Path(file).open("r") as f:
+        file_content = f.readlines()
+
+    for i, line in enumerate(file_content):
+        if i >= first_line and line_search in line:
+            break
+    else:
+        report_error(f"Could not find the packet id for {packet.__name__}.", packet.GAME_STATE, None)
+        return
+
+    file_content[i] = REPLACE_PACKET_ID_TEMPLATE.format(packet_id=hex(new_id))
+    verbose_print(f"Changing the packet id of {packet.__name__} to {hex(new_id)}")
+
+    with Path(file).open("w") as f:
+        f.writelines(file_content)
+
+
+def insert_packet(
+    game_state: GameState,
+    boundness: Literal["clientbound", "serverbound"],
+    packet_name: str,
+    packet_id: int,
+) -> None:
+    """Insert a new packet in the packets modules. This function assumes that the redaction order is correct."""
+    o_id_packets = {
+        packet.PACKET_ID: packet
+        for packet in list_imports_module(
+            PACKETS_MODULES[game_state],
+            packets_only=True,
+            keep=boundness,
+        )
+    }
+
+    if packet_name in [packet.__name__ for packet in o_id_packets.values()]:
+        report_error(f"The packet `{packet_name}` is already defined.", game_state, boundness)
+        return
+
+    if packet_id in o_id_packets:
+        file = inspect.getfile(o_id_packets[packet_id])
+        line_number = inspect.getsourcelines(o_id_packets[packet_id])[1]
+        verbose_print(f"Replacing and shifting the packet {packet_name} ({hex(packet_id)})")
+    elif any(packet_id < id_ for id_ in o_id_packets):
+        next_packet_id = min(id_ for id_ in o_id_packets if id_ > packet_id)
+        file = inspect.getfile(o_id_packets[next_packet_id])
+        line_number = inspect.getsourcelines(o_id_packets[next_packet_id])[1]
+        verbose_print(f"Inserting the packet {packet_name} ({hex(packet_id)}) before {o_id_packets[next_packet_id]}")
+    else:
+        file = inspect.getfile(o_id_packets[max(o_id_packets)])
+        with Path(file).open("r") as f:
+            line_number = len(f.readlines())
+        verbose_print(f"Appending the packet {packet_name} ({hex(packet_id)}) at the end of the file {file}")
+
+    current_id = packet_id
+    while current_id in o_id_packets:
+        edit_packet_id(o_id_packets[current_id], current_id + 1)
+        current_id += 1
+
+    with Path(file).open("r") as f:
+        file_content = f.readlines()
+        while file_content[line_number - 1].startswith("@"):  # Avoid inserting the packet inside the decorators
+            line_number -= 1
+
+        file_content.insert(
+            line_number,
+            PACKET_TEMPLATE_INSERT.format(
+                packet_name=packet_name,
+                packet_id=hex(packet_id),
+                game_state=game_state.name,
+                boundness="ClientBound" if boundness == "clientbound" else "ServerBound",
+            ),
+        )
+    with Path(file).open("w") as f:
+        f.writelines(file_content)
+    format_ruff(Path(file), silent=not _verbose)
+
+
 if __name__ == "__main__":
     import argparse
 
@@ -438,7 +567,12 @@ if __name__ == "__main__":
     parser.add_argument(
         "-i", "--init", action="store_true", help="Generate the __init__.py files for all game states."
     )
-    parser.add_argument("-c", "--continuity", action="store_true", help="Check the continuity of the packet ids.")
+    parser.add_argument(
+        "-c",
+        "--continuity",
+        action="store_true",
+        help="Check the continuity of the packet ids and check for duplicates.",
+    )
     parser.add_argument("-o", "--check-redaction-order", action="store_true", help="Check the redaction order.")
     parser.add_argument(
         "-O",
@@ -451,7 +585,7 @@ if __name__ == "__main__":
         "-b", "--check-boundness-docstring", action="store_true", help="Check the boundness in the docstrings."
     )
     parser.add_argument(
-        "-p",
+        "-C",
         "--compare-packets",
         type=str,
         default=None,
@@ -464,21 +598,87 @@ if __name__ == "__main__":
         action="store_true",
         help="Replace the name of the packets in the packets modules.",
     )
+    parser.add_argument(
+        "-A",
+        "--auto-insert",
+        action="store_true",
+        help="Automatically insert the packets in the code when they are missing. This works with --compare-packets.",
+    )
+
+    parser.add_argument(
+        "-R",
+        "--auto-change-packet-id",
+        action="store_true",
+        help="Automatically change the packet id. This works with --compare-packets.",
+    )
 
     parser.add_argument("-a", "--all", action="store_true", help="Run all checks.")
+
+    parser.add_argument(
+        "-I",
+        "--insert-packet",
+        action="store_true",
+        help="Insert a new packet in the packets modules. The packet id must be provided.",
+    )
 
     parser.add_argument(
         "-G",
         "--game-state",
         type=str,
         choices=[g.name for g in GAME_STATES],
-        help="The game state to check the packets for.",
+        help="The game state to check the packets for / insert the packets into.",
+    )
+
+    parser.add_argument(
+        "-B",
+        "--boundness",
+        type=str,
+        choices=["clientbound", "serverbound"],
+        help="The boundness of the packet to be inserted.",
+    )
+
+    parser.add_argument(
+        "-n",
+        "--packet-name",
+        type=str,
+        help="The name of the packet to be inserted.",
+    )
+
+    parser.add_argument(
+        "-p",
+        "--packet-id",
+        type=str,
+        help="The id of the packet to be inserted.",
     )
 
     parser.add_argument("-v", "--verbose", action="store_true", help="Print verbose output.")
 
     args = parser.parse_args()
     _verbose = args.verbose
+
+    if args.insert_packet:
+        if not args.game_state or not args.boundness or not args.packet_name or not args.packet_id:
+            parser.error("The game state, boundness, packet name, and packet id must be provided.")
+
+        packet_id = int(args.packet_id, 16)
+        packet_name = packet_name_to_class_name(args.packet_name)
+        game_state = {g.name: g for g in GAME_STATES}[args.game_state.upper()]
+        boundness = args.boundness
+
+        if not args.skip_redaction_order:
+            packets = list_imports_module(PACKETS_MODULES[game_state], packets_only=True)
+            packets_bound = filter_bound(packets, boundness)
+            if not check_redaction_order(packets_bound, game_state, boundness):
+                report_error(
+                    "The redaction order is not correct. Please ensure that the order in which the packets are defined"
+                    "is the same as the order of the packet ids before inserting a new packet.",
+                    game_state,
+                    boundness,
+                )
+                sys.exit(1)
+
+        insert_packet(game_state, boundness, packet_name, packet_id)
+        sys.exit(0)
 
     if args.game_state:
         game_states = [{g.name: g for g in GAME_STATES}[args.game_state.upper()]]
@@ -489,7 +689,7 @@ if __name__ == "__main__":
         game_state: list_imports_module(PACKETS_MODULES[game_state], packets_only=True) for game_state in game_states
     }
 
-    if args.init or args.all:
+    if args.init:
         print("Generating __init__.py files ...")  # noqa: T201
         for game_state in game_states:
             generate_init(game_state)
@@ -533,4 +733,6 @@ if __name__ == "__main__":
                     boundness=boundness,
                     packets_file=args.compare_packets,
                     replace_names=args.replace_names,
+                    auto_insert=args.auto_insert,
+                    auto_change_packet_id=args.auto_change_packet_id,
                 )
