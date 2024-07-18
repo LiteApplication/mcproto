@@ -314,7 +314,7 @@ async def get_status(ip: str, port: int) -> dict:
     status_req_packet = StatusRequest()
 
     async with (await TCPAsyncConnection.make_client((ip, port), 2)) as connection:
-        # We start out at HANDSHAKING game state
+        # We start out at HANDSHAKE game state
         await async_write_packet(connection, handshake_packet)
         # After sending the handshake, we told the server to now move us into the STATUS game state
         await async_write_packet(connection, status_req_packet)

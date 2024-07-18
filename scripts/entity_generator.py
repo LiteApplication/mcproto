@@ -81,7 +81,7 @@ from mcproto.types.entity.generated import {generated}
 FILE_PATH = "mcproto/types/entity/generated.py"
 INIT_PATH = "mcproto/types/entity/__init__.py"
 
-# This dictionary holds the decumentation for each entity to allow it to be appended to inherited classes
+# This dictionary holds the documentation for each entity to allow it to be appended to inherited classes
 main_doc_repo: dict[str, str] = {}
 
 
@@ -266,15 +266,36 @@ def write_files(entity_data: list[EntityData]) -> None:
         file.write(INIT_FILE.format(header=header, generated=generated_str))
 
 
-def format_ruff(path: Path) -> None:
+def format_ruff(path: Path, silent: bool = False) -> None:
     """Format the generated files with ruff.
 
     :param path: The path to the file to format.
     """
     # This will only be called from the script with a trusted predefined path
     subprocess.run(  # noqa: S603
-        [sys.executable, "-m", "ruff", "format", str(path.absolute())],
+        [
+            sys.executable,
+            "-m",
+            "ruff",
+            "check",
+            "--select",
+            "I",  # Sort imports
+            "--fix",
+            str(path.absolute()),
+        ],
         check=True,
+        stdout=subprocess.PIPE if silent else None,
+    )
+    subprocess.run(  # noqa: S603
+        [
+            sys.executable,
+            "-m",
+            "ruff",
+            "format",
+            str(path.absolute()),
+        ],
+        check=True,
+        stdout=subprocess.PIPE if silent else None,
     )
 
 

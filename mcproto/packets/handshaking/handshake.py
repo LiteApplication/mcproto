@@ -37,7 +37,7 @@ class Handshake(ServerBoundPacket):
     """
 
     PACKET_ID: ClassVar[int] = 0x00
-    GAME_STATE: ClassVar[GameState] = GameState.HANDSHAKING
+    GAME_STATE: ClassVar[GameState] = GameState.HANDSHAKE
 
     protocol_version: int
     server_address: str

@@ -22,7 +22,7 @@ __all__ = [
 class GameState(IntEnum):
     """All possible game states in minecraft."""
 
-    HANDSHAKING = 0
+    HANDSHAKE = 0
     STATUS = 1
     LOGIN = 2
     PLAY = 3
@@ -138,7 +138,7 @@ class InvalidPacketContentError(IOError):
 
         msg_parts.append("packet in")
 
-        if self.game_state is GameState.HANDSHAKING:
+        if self.game_state is GameState.HANDSHAKE:
             msg_parts.append("handshaking")
         elif self.game_state is GameState.STATUS:
             msg_parts.append("status")

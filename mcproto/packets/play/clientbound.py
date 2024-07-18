@@ -10,12 +10,13 @@ from typing_extensions import Self, override
 
 from mcproto.buffer import Buffer
 from mcproto.packets import ClientBoundPacket, GameState
-from mcproto.packets.configuration import ServerLinksType
+from mcproto.packets.configuration.clientbound import ServerLinksType
 from mcproto.protocol.base_io import StructFormat
 from mcproto.types import (
     Advancement,
     AdvancementProgress,
     Angle,
+    BaseRecipe,
     Bitset,
     BlockEntity,
     CompoundNBT,
@@ -26,7 +27,6 @@ from mcproto.types import (
     NBTag,
     ParticleData,
     Position,
-    Recipe,
     RegistryTag,
     Slot,
     TextComponent,
@@ -65,10 +65,10 @@ class BundleDelimiter(ClientBoundPacket):
 
 @final
 @define
-class SpawnEntity(ClientBoundPacket):
+class AddEntity(ClientBoundPacket):
     """Sent by the server when an entity (aside from Experience Orb) is created. (Server -> Client).
 
-    Initialize the SpawnEntity packet.
+    Initialize the AddEntity packet.
 
     :param entity_id: A unique integer ID mostly used in the protocol to identify the entity.
     :type entity_id: int
@@ -155,10 +155,10 @@ class SpawnEntity(ClientBoundPacket):
 
 @final
 @define
-class SpawnExperienceOrb(ClientBoundPacket):
+class AddExperienceOrb(ClientBoundPacket):
     """Spawns one or more experience orbs. (Server -> Client).
 
-    Initialize the SpawnExperienceOrb packet.
+    Initialize the AddExperienceOrb packet.
 
     :param entity_id: A unique integer ID mostly used in the protocol to identify the entity.
     :type entity_id: int
@@ -191,7 +191,7 @@ class SpawnExperienceOrb(ClientBoundPacket):
 
 
 class Animation(IntEnum):
-    """An animation for the EntityAnimation Packet."""
+    """An animation for the Animate Packet."""
 
     SWING_MAIN_HAND = 0
     LEAVE_BED = 1
@@ -202,10 +202,10 @@ class Animation(IntEnum):
 
 @final
 @define
-class EntityAnimation(ClientBoundPacket):
+class Animate(ClientBoundPacket):
     """Sent whenever an entity should change animation. (Server -> Client).
 
-    Initialize the EntityAnimation packet.
+    Initialize the Animate packet.
 
     :param entity_id: Player ID.
     :type entity_id: int
@@ -237,13 +237,13 @@ class EntityAnimation(ClientBoundPacket):
 
 @final
 @define
-class AwardStatistics(ClientBoundPacket):
+class AwardStats(ClientBoundPacket):
     """Informs the client of its current statistics. (Server -> Client).
 
     Sent as a response to Client Command (id 1). Will only send the changed values if previously requested.
     .. seealso:: https://wiki.vg/Protocol#Entity_Animation
 
-    Initialize the AwardStatistics packet.
+    Initialize the AwardStats packet.
 
     :param statistics: A list of tuples containing the category ID, statistic ID, and value.
     :type statistics: list[tuple[int, int, int]]
@@ -277,10 +277,10 @@ class AwardStatistics(ClientBoundPacket):
 
 @final
 @define
-class AcknowledgeBlockChange(ClientBoundPacket):
+class BlockChangedAck(ClientBoundPacket):
     """Acknowledges a user-initiated block change. (Server -> Client).
 
-    Initialize the AcknowledgeBlockChange packet.
+    Initialize the BlockChangedAck packet.
 
     :param sequence_id: Represents the sequence to acknowledge.
     :type sequence_id: int
@@ -304,10 +304,10 @@ class AcknowledgeBlockChange(ClientBoundPacket):
 
 @final
 @define
-class SetBlockDestroyStage(ClientBoundPacket):
+class BlockDestruction(ClientBoundPacket):
     """Sets the block destroy stage at the given location. (Server -> Client).
 
-    Initialize the SetBlockDestroyStage packet.
+    Initialize the BlockDestruction packet.
 
     :param entity_id: The ID of the entity breaking the block.
     :type entity_id: int
@@ -381,7 +381,7 @@ class BlockEntityData(ClientBoundPacket):
         return cls(location=location, action=action, nbt=nbt)
 
 
-class BlockActionID(IntEnum):
+class BlockEventID(IntEnum):
     """Represents the different block action IDs."""
 
     NONE = 0
@@ -398,7 +398,7 @@ class BlockActionID(IntEnum):
     CONTAINER_UPDATE_PLAYER_LOOKING = 1
 
 
-class BlockActionParameter(IntEnum):
+class BlockEventParameter(IntEnum):
     """Represents the different block action parameters."""
 
     NONE = 0
@@ -413,17 +413,17 @@ class BlockActionParameter(IntEnum):
 
 @final
 @define
-class BlockAction(ClientBoundPacket):
+class BlockEvent(ClientBoundPacket):
     """Used for a number of actions and animations performed by blocks, usually non-persistent. (Server -> Client).
 
-    Initialize the BlockAction packet.
+    Initialize the BlockEvent packet.
 
     :param location: Block coordinates.
     :type location: :class:`~mcproto.types.Position`
     :param action_id: Varies depending on block — see Block Actions.
-    :type action_id: :class:`~mcproto.types.BlockActionID`
+    :type action_id: :class:`~mcproto.types.BlockEventID`
     :param action_parameter: Varies depending on block — see Block Actions.
-    :type action_parameter: :class:`~mcproto.types.BlockActionParameter` | int
+    :type action_parameter: :class:`~mcproto.types.BlockEventParameter` | int
     :param block_type: The block type ID for the block. This is not used by the Notchian client, as it will infer the
         type of block based on the given position.
     :type block_type: int
@@ -435,12 +435,12 @@ class BlockAction(ClientBoundPacket):
     GAME_STATE: ClassVar[GameState] = GameState.PLAY
 
     location: Position
-    action_id: BlockActionID
-    action_parameter: BlockActionParameter | int
+    action_id: BlockEventID
+    action_parameter: BlockEventParameter | int
     block_type: int
 
     def __attrs_post_init__(self) -> None:
-        if isinstance(self.action_parameter, BlockActionParameter):
+        if isinstance(self.action_parameter, BlockEventParameter):
             self.action_parameter = self.action_parameter.value
 
     @override
@@ -456,7 +456,7 @@ class BlockAction(ClientBoundPacket):
     @classmethod
     def _deserialize(cls, buf: Buffer, /) -> Self:
         location = Position.deserialize(buf)
-        action_id = BlockActionID(buf.read_value(StructFormat.UBYTE))
+        action_id = BlockEventID(buf.read_value(StructFormat.UBYTE))
         action_parameter = buf.read_value(StructFormat.UBYTE)
         block_type = buf.read_varint()
         return cls(location=location, action_id=action_id, action_parameter=action_parameter, block_type=block_type)
@@ -494,7 +494,7 @@ class BlockUpdate(ClientBoundPacket):
         return cls(location=location, block_id=block_id)
 
 
-class BossBarColor(IntEnum):
+class BossEventColor(IntEnum):
     """Represents the different boss bar colors."""
 
     PINK = 0
@@ -506,7 +506,7 @@ class BossBarColor(IntEnum):
     WHITE = 6
 
 
-class BossBarDivisionType(IntEnum):
+class BossEventDivisionType(IntEnum):
     """Represents the different boss bar division types."""
 
     NONE = 0
@@ -516,7 +516,7 @@ class BossBarDivisionType(IntEnum):
     TWENTY_NOTCHES = 4
 
 
-class BossBarAction(IntEnum):
+class BossEventAction(IntEnum):
     """Represents the different boss bar actions."""
 
     ADD = 0
@@ -529,24 +529,24 @@ class BossBarAction(IntEnum):
 
 @final
 @define
-class BossBar(ClientBoundPacket):
+class BossEvent(ClientBoundPacket):
     """Sent by the server to update a boss bar. (Server -> Client).
 
-    Initialize the BossBar packet.
+    Initialize the BossEvent packet.
 
     :param uuid: Unique ID for this bar.
     :type uuid: :class:`mcproto.types.UUID`
     :param action: Determines the layout of the remaining packet.
-    :type action: :class:`~mcproto.types.BossBarAction`
+    :type action: :class:`~mcproto.types.BossEventAction`
     :param title: The title of the boss bar. Only present if the action is ADD or UPDATE_TITLE.
     :type title: :class:`~mcproto.types.TextComponent`, optional
     :param health: From 0 to 1. Values greater than 1 do not crash a Notchian client, and start rendering part of a
     second health bar at around 1.5. Only present if the action is ADD or UPDATE_HEALTH.
     :type health: float, optional
     :param color: Color ID (see below). Only present if the action is ADD, UPDATE_HEALTH, or UPDATE_STYLE.
-    :type color: :class:`~mcproto.types.BossBarColor`, optional
+    :type color: :class:`~mcproto.types.BossEventColor`, optional
     :param division: Type of division (see below). Only present if the action is ADD, UPDATE_HEALTH, or UPDATE_STYLE.
-    :type division: :class:`~mcproto.types.BossBarDivisionType`, optional
+    :type division: :class:`~mcproto.types.BossEventDivisionType`, optional
     :param flags: Bit mask. 0x1: should darken sky, 0x2: is dragon bar (used to play end music), 0x04: create fog
     (previously was also controlled by 0x02). Only present if the action is ADD, UPDATE_FLAGS, or UPDATE_STYLE.
     :type flags: int, optional
@@ -556,60 +556,60 @@ class BossBar(ClientBoundPacket):
     GAME_STATE: ClassVar[GameState] = GameState.PLAY
 
     uuid: UUID
-    action: BossBarAction
+    action: BossEventAction
     title: TextComponent | None = None
     health: float | None = None
-    color: BossBarColor | None = None
-    division: BossBarDivisionType | None = None
+    color: BossEventColor | None = None
+    division: BossEventDivisionType | None = None
     darken_sky: bool | None = None
     is_dragon_bar: bool | None = None
     create_fog: bool | None = None
 
     def __attrs_post_init__(self) -> None:
-        if self.action == BossBarAction.ADD:
+        if self.action == BossEventAction.ADD:
             if self.title is None:
-                raise ValueError("BossBarAction.ADD requires a title")
+                raise ValueError("BossEventAction.ADD requires a title")
             if self.health is None:
-                raise ValueError("BossBarAction.ADD requires health")
+                raise ValueError("BossEventAction.ADD requires health")
             if self.color is None:
-                raise ValueError("BossBarAction.ADD requires color")
+                raise ValueError("BossEventAction.ADD requires color")
             if self.division is None:
-                raise ValueError("BossBarAction.ADD requires division")
+                raise ValueError("BossEventAction.ADD requires division")
             if self.darken_sky is None:
-                raise ValueError("BossBarAction.ADD requires darken_sky")
+                raise ValueError("BossEventAction.ADD requires darken_sky")
             if self.is_dragon_bar is None:
-                raise ValueError("BossBarAction.ADD requires is_dragon_bar")
+                raise ValueError("BossEventAction.ADD requires is_dragon_bar")
             if self.create_fog is None:
-                raise ValueError("BossBarAction.ADD requires create_fog")
+                raise ValueError("BossEventAction.ADD requires create_fog")
 
-        elif self.action == BossBarAction.UPDATE_HEALTH:
+        elif self.action == BossEventAction.UPDATE_HEALTH:
             if self.health is None:
-                raise ValueError("BossBarAction.UPDATE_HEALTH requires health")
-        elif self.action == BossBarAction.UPDATE_TITLE:
+                raise ValueError("BossEventAction.UPDATE_HEALTH requires health")
+        elif self.action == BossEventAction.UPDATE_TITLE:
             if self.title is None:
-                raise ValueError("BossBarAction.UPDATE_TITLE requires a title")
-        elif self.action == BossBarAction.UPDATE_STYLE:
+                raise ValueError("BossEventAction.UPDATE_TITLE requires a title")
+        elif self.action == BossEventAction.UPDATE_STYLE:
             if self.color is None:
-                raise ValueError("BossBarAction.UPDATE_STYLE requires color")
+                raise ValueError("BossEventAction.UPDATE_STYLE requires color")
             if self.division is None:
-                raise ValueError("BossBarAction.UPDATE_STYLE requires division")
-        elif self.action == BossBarAction.UPDATE_FLAGS:
+                raise ValueError("BossEventAction.UPDATE_STYLE requires division")
+        elif self.action == BossEventAction.UPDATE_FLAGS:
             if self.darken_sky is None:
-                raise ValueError("BossBarAction.UPDATE_FLAGS requires darken_sky")
+                raise ValueError("BossEventAction.UPDATE_FLAGS requires darken_sky")
             if self.is_dragon_bar is None:
-                raise ValueError("BossBarAction.UPDATE_FLAGS requires is_dragon_bar")
+                raise ValueError("BossEventAction.UPDATE_FLAGS requires is_dragon_bar")
             if self.create_fog is None:
-                raise ValueError("BossBarAction.UPDATE_FLAGS requires create_fog")
+                raise ValueError("BossEventAction.UPDATE_FLAGS requires create_fog")
 
     @override
     def serialize_to(self, buf: Buffer) -> None:
         self.uuid.serialize_to(buf)
         buf.write_varint(self.action.value)
-        if self.action == BossBarAction.ADD:
+        if self.action == BossEventAction.ADD:
             self.title = cast(TextComponent, self.title)
             self.health = cast(float, self.health)
-            self.color = cast(BossBarColor, self.color)
-            self.division = cast(BossBarDivisionType, self.division)
+            self.color = cast(BossEventColor, self.color)
+            self.division = cast(BossEventDivisionType, self.division)
 
             flags = 0
             flags += 0x1 if self.darken_sky else 0
@@ -621,20 +621,20 @@ class BossBar(ClientBoundPacket):
             buf.write_varint(self.color.value)
             buf.write_varint(self.division.value)
             buf.write_value(StructFormat.UBYTE, flags)
-        elif self.action == BossBarAction.UPDATE_HEALTH:
+        elif self.action == BossEventAction.UPDATE_HEALTH:
             self.health = cast(float, self.health)
             buf.write_value(StructFormat.FLOAT, self.health)
-        elif self.action == BossBarAction.UPDATE_TITLE:
+        elif self.action == BossEventAction.UPDATE_TITLE:
             self.title = cast(TextComponent, self.title)
 
             self.title.serialize_to(buf)
-        elif self.action == BossBarAction.UPDATE_STYLE:
-            self.color = cast(BossBarColor, self.color)
-            self.division = cast(BossBarDivisionType, self.division)
+        elif self.action == BossEventAction.UPDATE_STYLE:
+            self.color = cast(BossEventColor, self.color)
+            self.division = cast(BossEventDivisionType, self.division)
 
             buf.write_varint(self.color.value)
             buf.write_varint(self.division.value)
-        elif self.action == BossBarAction.UPDATE_FLAGS:
+        elif self.action == BossEventAction.UPDATE_FLAGS:
             flags = 0
             flags += 0x1 if self.darken_sky else 0
             flags += 0x2 if self.is_dragon_bar else 0
@@ -646,7 +646,7 @@ class BossBar(ClientBoundPacket):
     @classmethod
     def _deserialize(cls, buf: Buffer, /) -> Self:
         uuid = UUID.deserialize(buf)
-        action = BossBarAction(buf.read_varint())
+        action = BossEventAction(buf.read_varint())
         title = None
         health = None
         color = None
@@ -654,25 +654,25 @@ class BossBar(ClientBoundPacket):
         darken_sky = None
         is_dragon_bar = None
         create_fog = None
-        if action == BossBarAction.ADD:
+        if action == BossEventAction.ADD:
             title = TextComponent.deserialize(buf)
             health = buf.read_value(StructFormat.FLOAT)
-            color = BossBarColor(buf.read_varint())
-            division = BossBarDivisionType(buf.read_varint())
+            color = BossEventColor(buf.read_varint())
+            division = BossEventDivisionType(buf.read_varint())
             flags = buf.read_value(StructFormat.UBYTE)
 
             darken_sky = bool(flags & 0x1)
             is_dragon_bar = bool(flags & 0x2)
             create_fog = bool(flags & 0x4)
 
-        elif action == BossBarAction.UPDATE_HEALTH:
+        elif action == BossEventAction.UPDATE_HEALTH:
             health = buf.read_value(StructFormat.FLOAT)
-        elif action == BossBarAction.UPDATE_TITLE:
+        elif action == BossEventAction.UPDATE_TITLE:
             title = TextComponent.deserialize(buf)
-        elif action == BossBarAction.UPDATE_STYLE:
-            color = BossBarColor(buf.read_varint())
-            division = BossBarDivisionType(buf.read_varint())
-        elif action == BossBarAction.UPDATE_FLAGS:
+        elif action == BossEventAction.UPDATE_STYLE:
+            color = BossEventColor(buf.read_varint())
+            division = BossEventDivisionType(buf.read_varint())
+        elif action == BossEventAction.UPDATE_FLAGS:
             flags = buf.read_value(StructFormat.UBYTE)
 
             darken_sky = bool(flags & 0x1)
@@ -774,10 +774,10 @@ class ChunkBatchStart(ClientBoundPacket):
 
 @final
 @define
-class ChunkBiomes(ClientBoundPacket):
+class ChunksBiomes(ClientBoundPacket):
     """Sent by the server to update the biomes of a chunk. (Server -> Client).
 
-    Initialize the ChunkBiomes packet.
+    Initialize the ChunksBiomes packet.
 
     :param chunk_biome_data: A list of tuples containing the chunk Z coordinate, chunk X coordinate, size, and data
     for each chunk.
@@ -841,10 +841,10 @@ class ClearTitles(ClientBoundPacket):
 
 @final
 @define
-class CommandSuggestionsResponse(ClientBoundPacket):
+class CommandSuggestions(ClientBoundPacket):
     """The server responds with a list of auto-completions of the last word sent to it. (Server -> Client).
 
-    Initialize the CommandSuggestionsResponse packet.
+    Initialize the CommandSuggestions packet.
 
     :param id: Transaction ID.
     :type id: int
@@ -921,12 +921,12 @@ class Commands(ClientBoundPacket):
 
 @final
 @define
-class CloseContainer(ClientBoundPacket):
+class ContainerClose(ClientBoundPacket):
     """Indicates that a window is forcibly closed. (Server -> Client).
 
     The Notchian client will close any open container regardless of the window ID.
 
-    Initialize the CloseContainer packet.
+    Initialize the ContainerClose packet.
 
     :param window_id: This is the ID of the window that was closed. 0 for inventory.
     :type window_id: int
@@ -950,10 +950,10 @@ class CloseContainer(ClientBoundPacket):
 
 @final
 @define
-class SetContainerContent(ClientBoundPacket):
+class ContainerSetContent(ClientBoundPacket):
     """Replaces the contents of a container window. (Server -> Client).
 
-    Initialize the SetContainerContent packet.
+    Initialize the ContainerSetContent packet.
 
     :param window_id: The ID of window which items are being sent for. 0 for player inventory.
     :type window_id: int
@@ -995,10 +995,10 @@ class SetContainerContent(ClientBoundPacket):
 
 @final
 @define
-class SetContainerProperty(ClientBoundPacket):
+class ContainerSetData(ClientBoundPacket):
     """Inform the client that part of a GUI window should be updated. (Server -> Client).
 
-    Initialize the SetContainerProperty packet.
+    Initialize the ContainerSetData packet.
 
     :param window_id: The ID of the window which should be updated.
     :type window_id: int
@@ -1032,10 +1032,10 @@ class SetContainerProperty(ClientBoundPacket):
 
 @final
 @define
-class SetContainerSlot(ClientBoundPacket):
+class ContainerSetSlot(ClientBoundPacket):
     """Sent by the server when an item in a slot (in a window) is added/removed. (Server -> Client).
 
-    Initialize the SetContainerSlot packet.
+    Initialize the ContainerSetSlot packet.
 
     :param window_id: The window which is being updated. 0 for player inventory.
     :type window_id: int
@@ -1075,7 +1075,7 @@ class SetContainerSlot(ClientBoundPacket):
 @final
 @define
 class CookieRequest(ClientBoundPacket):
-    """Requests a cookie that was previously stored.
+    """Requests a cookie that was previously stored. (Server -> Client).
 
     Initialize the CookieRequest packet.
 
@@ -1101,10 +1101,10 @@ class CookieRequest(ClientBoundPacket):
 
 @final
 @define
-class SetCooldown(ClientBoundPacket):
+class Cooldown(ClientBoundPacket):
     """Applies a cooldown period to all items with the given type. (Server -> Client).
 
-    Initialize the SetCooldown packet.
+    Initialize the Cooldown packet.
 
     :param item_id: Numeric ID of the item to apply a cooldown to.
     :type item_id: int
@@ -1133,12 +1133,12 @@ class SetCooldown(ClientBoundPacket):
 
 @final
 @define
-class ChatSuggestions(ClientBoundPacket):
+class CustomChatCompletions(ClientBoundPacket):
     """Send chat message completions to clients. (Server -> Client).
 
     .. warning:: Not used by the Notchian server.
 
-    Initialize the ChatSuggestions packet.
+    Initialize the CustomChatCompletions packet.
 
     :param action: 0: Add, 1: Remove, 2: Set
     :type action: int
@@ -1170,10 +1170,10 @@ class ChatSuggestions(ClientBoundPacket):
 
 @final
 @define
-class ClientboundPluginMessage(ClientBoundPacket):
+class CustomPayload(ClientBoundPacket):
     """Mods and plugins can use this to send their data. (Server -> Client).
 
-    Initialize the ClientboundPluginMessage packet.
+    Initialize the ClientboundCustomPayload packet.
 
     :param channel: Name of the plugin channel used to send the data.
     :type channel: :class:`~mcproto.types.Identifier`
@@ -1299,10 +1299,10 @@ class DebugSample(ClientBoundPacket):
 
 @final
 @define
-class DeleteMessage(ClientBoundPacket):
+class DeleteChat(ClientBoundPacket):
     """Removes a message from the client's chat. (Server -> Client).
 
-    Initialize the DeleteMessage packet.
+    Initialize the DeleteChat packet.
 
     :param message_id: The message Id + 1, used for validating message signature.
     :type message_id: int
@@ -1361,10 +1361,10 @@ class Disconnect(ClientBoundPacket):
 
 @final
 @define
-class DisguisedChatMessage(ClientBoundPacket):
+class DisguisedChat(ClientBoundPacket):
     """Sends the client a chat message, but without any message signing information. (Server -> Client).
 
-    Initialize the DisguisedChatMessage packet.
+    Initialize the DisguisedChat packet.
 
     :param message: This is used as the content parameter when formatting the message on the client.
     :type message: :class:`~mcproto.types.TextComponent`
@@ -1440,12 +1440,12 @@ class EntityEvent(ClientBoundPacket):
 
 @final
 @define
-class Explosion(ClientBoundPacket):
+class Explode(ClientBoundPacket):
     """Sent when an explosion occurs (creepers, TNT, and ghast fireballs). (Server -> Client).
 
     Each block in Records is set to air. Coordinates for each axis in record is int(X) + record.x
 
-    Initialize the Explosion packet.
+    Initialize the Explode packet.
 
     :param position: The position of the explosion.
     :type position: :class:`mcproto.types.Vec3`
@@ -1531,10 +1531,10 @@ class Explosion(ClientBoundPacket):
 
 @final
 @define
-class UnloadChunk(ClientBoundPacket):
+class ForgetLevelChunk(ClientBoundPacket):
     """Tells the client to unload a chunk column. (Server -> Client).
 
-    Initialize the UnloadChunk packet.
+    Initialize the ForgetLevelChunk packet.
 
     :param chunk_x: The X coordinate of the chunk column.
     :type chunk_x: int
@@ -1616,13 +1616,13 @@ class GameEvent(ClientBoundPacket):
 
 @final
 @define
-class OpenHorseScreen(ClientBoundPacket):
+class HorseScreenOpen(ClientBoundPacket):
     """Used exclusively for opening the horse GUI. (Server -> Client).
 
     Open Screen is used for all other GUIs. The client will not open the inventory if the Entity ID does not point to
     an horse-like animal.
 
-    Initialize the OpenHorseScreen packet.
+    Initialize the HorseScreenOpen packet.
 
     :param window_id: The window ID.
     :type window_id: int
@@ -1688,10 +1688,10 @@ class HurtAnimation(ClientBoundPacket):
 
 @final
 @define
-class InitializeWorldBorder(ClientBoundPacket):
+class InitializeBorder(ClientBoundPacket):
     """Initialize World Border (Server -> Client).
 
-    Initialize the InitializeWorldBorder packet.
+    Initialize the InitializeBorder packet.
 
     :param x: The X coordinate of the world border center.
     :type x: float
@@ -1759,7 +1759,7 @@ class InitializeWorldBorder(ClientBoundPacket):
 
 @final
 @define
-class ClientboundKeepAlive(ClientBoundPacket):
+class KeepAlive(ClientBoundPacket):
     """The server will frequently send out a keep-alive, each containing a random ID. (Server -> Client).
 
     The client must respond with the same payload (see Serverbound Keep Alive). If the client does not respond to a
@@ -1792,12 +1792,12 @@ class ClientboundKeepAlive(ClientBoundPacket):
 
 @final
 @define
-class ChunkDataAndUpdateLight(ClientBoundPacket):
+class LevelChunkWithLight(ClientBoundPacket):
     """Sent when a chunk comes into the client's view distance. (Server -> Client).
 
     Specifies its terrain, lighting and block entities (e.g. banners, signs, etc.)
 
-    Initialize the ChunkDataAndUpdateLight packet.
+    Initialize the LevelChunkWithLight packet.
 
     :param chunk_x: The X coordinate of the chunk.
     :type chunk_x: int
@@ -1896,10 +1896,10 @@ class ChunkDataAndUpdateLight(ClientBoundPacket):
 
 @final
 @define
-class WorldEvent(ClientBoundPacket):
+class LevelEvent(ClientBoundPacket):
     """Sent when a client is to play a sound or particle effect. (Server -> Client).
 
-    Initialize the WorldEvent packet.
+    Initialize the LevelEvent packet.
 
     :param event: The event type.
     :type event: int
@@ -1943,10 +1943,10 @@ class WorldEvent(ClientBoundPacket):
 
 @final
 @define
-class Particle(ClientBoundPacket):
+class LevelParticles(ClientBoundPacket):
     """Displays the named particle. (Server -> Client).
 
-    Initialize the Particle packet.
+    Initialize the LevelParticles packet.
 
     :param particle: The particle data (including ID).
     :type particle: :class:`mcproto.data_types.particle_data.ParticleData`
@@ -2004,10 +2004,10 @@ class Particle(ClientBoundPacket):
 
 @final
 @define
-class UpdateLight(ClientBoundPacket):
+class LightUpdate(ClientBoundPacket):
     """Updates light levels for a chunk. (Server -> Client).
 
-    Initialize the UpdateLight packet.
+    Initialize the LightUpdate packet.
 
     :param chunk_x: The X coordinate of the chunk.
     :type chunk_x: int
@@ -2132,7 +2132,7 @@ class Login(ClientBoundPacket):
     .. note:: `death_dimension_name` and `death_location` have to be present or absent at the same time
     """
 
-    PACKET_ID: ClassVar[int] = 0x29
+    PACKET_ID: ClassVar[int] = 0x2B
     GAME_STATE: ClassVar[GameState] = GameState.PLAY
 
     entity_id: int
@@ -2236,10 +2236,10 @@ class Login(ClientBoundPacket):
 
 @final
 @define
-class MapData(ClientBoundPacket):
+class MapItemData(ClientBoundPacket):
     """Updates a rectangular area on a map item. (Server -> Client).
 
-    Initialize the MapData packet.
+    Initialize the MapItemData packet.
 
     :param map_id: Map ID of the map being modified.
     :type map_id: int
@@ -2397,10 +2397,10 @@ class MerchantOffers(ClientBoundPacket):
 
 @final
 @define
-class UpdateEntityPosition(ClientBoundPacket):
+class MoveEntityPos(ClientBoundPacket):
     """Indicates that an entity moved less than 8 blocks. (Server -> Client).
 
-    Initialize the UpdateEntityPosition packet.
+    Initialize the MoveEntityPos packet.
 
     :param entity_id: The ID of the entity.
     :type entity_id: int
@@ -2449,7 +2449,7 @@ class UpdateEntityPosition(ClientBoundPacket):
 
     @staticmethod
     def deltas(initial: Vec3, final: Vec3) -> tuple[int, int, int]:
-        """Calculate the deltas for the UpdateEntityPosition packet.
+        """Calculate the deltas for the MoveEntityPos packet.
 
         :param initial: The initial position.
         :type initial: :class:`mcproto.types.Vec3`
@@ -2476,10 +2476,10 @@ class UpdateEntityPosition(ClientBoundPacket):
 
 @final
 @define
-class UpdateEntityPositionAndRotation(ClientBoundPacket):
+class MoveEntityPosRot(ClientBoundPacket):
     """Indicates that an entity rotated and moved. (Server -> Client).
 
-    Initialize the UpdateEntityPositionAndRotation packet.
+    Initialize the MoveEntityPosRot packet.
 
     :param entity_id: The ID of the entity.
     :type entity_id: int
@@ -2541,10 +2541,10 @@ class UpdateEntityPositionAndRotation(ClientBoundPacket):
 
 @final
 @define
-class UpdateEntityRotation(ClientBoundPacket):
+class MoveEntityRot(ClientBoundPacket):
     """Indicates that an entity rotated. (Server -> Client).
 
-    Initialize the UpdateEntityRotation packet.
+    Initialize the MoveEntityRot packet.
 
     :param entity_id: The ID of the entity.
     :type entity_id: int
@@ -2762,10 +2762,10 @@ class Ping(ClientBoundPacket):
 
 @final
 @define
-class PingResponse(ClientBoundPacket):
+class PingPong(ClientBoundPacket):
     """Sent in response to a Ping packet. (Server -> Client).
 
-    Initialize the PingResponse packet.
+    Initialize the PingPong packet.
 
     :param payload: The payload of the ping response.
     :type payload: int
@@ -2886,10 +2886,10 @@ class PlayerAbilities(ClientBoundPacket):
 
 @final
 @define
-class PlayerChatMessage(ClientBoundPacket):
+class PlayerChat(ClientBoundPacket):
     """Sends the client a chat message from a player. (Server -> Client).
 
-    Initialize the PlayerChatMessage packet.
+    Initialize the PlayerChat packet.
 
     :param sender: The UUID of the sender.
     :type sender: :class:`mcproto.types.UUID`
@@ -2920,7 +2920,7 @@ class PlayerChatMessage(ClientBoundPacket):
     :type target_name: :class:`~mcproto.types.TextComponent`, optional
     """
 
-    PACKET_ID: ClassVar[int] = 0x37
+    PACKET_ID: ClassVar[int] = 0x39
     GAME_STATE: ClassVar[GameState] = GameState.PLAY
 
     sender: UUID
@@ -3004,12 +3004,12 @@ class PlayerChatMessage(ClientBoundPacket):
 
 @final
 @define
-class EndCombat(ClientBoundPacket):
+class PlayerCombatEnd(ClientBoundPacket):
     """Packet once used for twitch.tv metadata circa 1.8. (Server -> Client).
 
     Unused by the Notchian client.
 
-    Initialize the EndCombat packet.
+    Initialize the PlayerCombatEnd packet.
 
     :param duration: The length of the combat in ticks.
     :type duration: int
@@ -3033,12 +3033,12 @@ class EndCombat(ClientBoundPacket):
 
 @final
 @define
-class EnterCombat(ClientBoundPacket):
+class PlayerCombatEnter(ClientBoundPacket):
     """Packet once used for twitch.tv metadata circa 1.8. (Server -> Client).
 
     Unused by the Notchian client.
 
-    Initialize the EnterCombat packet.
+    Initialize the PlayerCombatEnter packet.
     """
 
     PACKET_ID: ClassVar[int] = 0x3B
@@ -3056,10 +3056,10 @@ class EnterCombat(ClientBoundPacket):
 
 @final
 @define
-class CombatDeath(ClientBoundPacket):
+class PlayerCombatKill(ClientBoundPacket):
     """Used to send a respawn screen. (Server -> Client).
 
-    Initialize the CombatDeath packet.
+    Initialize the PlayerCombatKill packet.
 
     :param player_id: The entity ID of the player that died.
     :type player_id: int
@@ -3117,7 +3117,7 @@ class PlayerInfoRemove(ClientBoundPacket):
 @final
 @define
 class PlayerInfoUpdate(ClientBoundPacket):
-    """Update informations in the <tab> player list.
+    """Update informations in the <tab> player list. (Server -> Client).
 
     :param player_acions: The actions for the players
     :type player_acions: dict[:class:`mcproto.types.UUID`,
@@ -3420,10 +3420,10 @@ class AimWith(IntEnum):
 
 @final
 @define
-class LookAt(ClientBoundPacket):
+class PlayerLookAt(ClientBoundPacket):
     """Used to rotate the client player to face the given location or entity (Server -> Client).
 
-    Initialize the LookAt packet.
+    Initialize the PlayerLookAt packet.
     :param aim_with: Aim with the head or the feet
     :type aim_with: :class:`AimWith`
     :param target: The target to look at
@@ -3476,7 +3476,7 @@ class LookAt(ClientBoundPacket):
 
 @final
 @define
-class SynchronizePlayerPosition(ClientBoundPacket):
+class PlayerPosition(ClientBoundPacket):
     """Teleports the client, in response to invalid move packets, etc. (Server -> Client).
 
     Due to latency, the server may receive outdated movement packets sent before the client was aware of the teleport.
@@ -3491,7 +3491,7 @@ class SynchronizePlayerPosition(ClientBoundPacket):
     Pitch is measured in degrees, where 0 is looking straight ahead, -90 is looking straight up, and 90 is looking
     straight down.
 
-    Initialize the SynchronizePlayerPosition packet.
+    Initialize the PlayerPosition packet.
 
     :param position: The new position (each field can be relative or absolute depending on the flags).
     :type position: :class:`mcproto.types.Vec3`
@@ -3569,10 +3569,10 @@ class SynchronizePlayerPosition(ClientBoundPacket):
 
 @final
 @define
-class UpdateRecipeBook(ClientBoundPacket):
+class Recipe(ClientBoundPacket):
     """Sent to update the recipe book. (Server -> Client).
 
-    Initialize the UpdateRecipeBook packet.
+    Initialize the Recipe packet.
 
     :param action: The action to perform. 0: init, 1: add, 2: remove.
     :type action: int
@@ -3711,10 +3711,10 @@ class RemoveEntities(ClientBoundPacket):
 
 @final
 @define
-class RemoveEntityEffect(ClientBoundPacket):
+class RemoveMobEffect(ClientBoundPacket):
     """Sent by the server to remove an entity effect. (Server -> Client).
 
-    Initialize the RemoveEntityEffect packet.
+    Initialize the RemoveMobEffect packet.
 
     :param entity_id: The entity ID.
     :type entity_id: int
@@ -3775,10 +3775,10 @@ class ResetScore(ClientBoundPacket):
 
 @final
 @define
-class RemoveResourcePack(ClientBoundPacket):
+class ResourcePackPop(ClientBoundPacket):
     """Remove Resource Pack (play) (Server -> Client).
 
-    Initialize the RemoveResourcePack packet.
+    Initialize the ResourcePackPop packet.
 
     :param uuid: The UUID of the resource pack to be removed.
     :type uuid: :class:`UUID`, optional
@@ -3802,10 +3802,10 @@ class RemoveResourcePack(ClientBoundPacket):
 
 @final
 @define
-class AddResourcePack(ClientBoundPacket):
+class ResourcePackPush(ClientBoundPacket):
     """Add Resource Pack (play) (Server -> Client).
 
-    Initialize the AddResourcePack packet.
+    Initialize the ResourcePackPush packet.
 
     :param uuid: The unique identifier of the resource pack.
     :type uuid: :class:`mcproto.types.UUID`
@@ -3974,13 +3974,13 @@ class Respawn(ClientBoundPacket):
 
 @final
 @define
-class SetHeadRotation(ClientBoundPacket):
+class RotateHead(ClientBoundPacket):
     """Changes the direction an entity's head is facing. (Server -> Client).
 
     While sending the Entity Look packet changes the vertical rotation of the head, sending this packet appears to be
     necessary to rotate the head horizontally.
 
-    Initialize the SetHeadRotation packet.
+    Initialize the RotateHead packet.
 
     :param entity_id: The ID of the entity.
     :type entity_id: int
@@ -4009,12 +4009,12 @@ class SetHeadRotation(ClientBoundPacket):
 
 @final
 @define
-class UpdateSectionBlocks(ClientBoundPacket):
+class SectionBlocksUpdate(ClientBoundPacket):
     """Fired whenever 2 or more blocks are changed within the same chunk on the same tick. (Server -> Client).
 
     Warning.png Changing blocks in chunks not loaded by the client is unsafe (see note on Block Update).
 
-    Initialize the UpdateSectionBlocks packet.
+    Initialize the SectionBlocksUpdate packet.
 
     :param chunk_section_position: Chunk section coordinate (encoded chunk x and z with each 22 bits, and section y
     with 20 bits, from left to right).
@@ -4378,10 +4378,10 @@ class SetCamera(ClientBoundPacket):
 
 @final
 @define
-class SetHeldItemClientBound(ClientBoundPacket):
+class SetCarriedItem(ClientBoundPacket):
     """Sent to change the player's slot selection. (Server -> Client).
 
-    Initialize the SetHeldItemClientBound packet.
+    Initialize the SetCarriedItem packet.
 
     :param slot: The slot which the player has selected (0-8).
     :type slot: int
@@ -4405,10 +4405,10 @@ class SetHeldItemClientBound(ClientBoundPacket):
 
 @final
 @define
-class SetCenterChunk(ClientBoundPacket):
+class SetChunkCacheCenter(ClientBoundPacket):
     """Sets the center position of the client's chunk loading area. (Server -> Client).
 
-    Initialize the SetCenterChunk packet.
+    Initialize the SetChunkCacheCenter packet.
 
     :param chunk_x: Chunk X coordinate of the loading area center.
     :type chunk_x: int
@@ -4437,10 +4437,10 @@ class SetCenterChunk(ClientBoundPacket):
 
 @final
 @define
-class SetRenderDistance(ClientBoundPacket):
+class SetChunkCacheRadius(ClientBoundPacket):
     """Sent by the integrated singleplayer server when changing render distance. (Server -> Client).
 
-    Initialize the SetRenderDistance packet.
+    Initialize the SetChunkCacheRadius packet.
 
     :param view_distance: Render distance (2-32).
     :type view_distance: int
@@ -4499,10 +4499,10 @@ class SetDefaultSpawnPosition(ClientBoundPacket):
 
 @final
 @define
-class DisplayObjective(ClientBoundPacket):
+class SetDisplayObjective(ClientBoundPacket):
     """Sent to the client when it should display a scoreboard. (Server -> Client).
 
-    Initialize the DisplayObjective packet.
+    Initialize the SetDisplayObjective packet.
 
     :param position: The position of the scoreboard. 0: list, 1: sidebar, 2: below name, 3 - 18: team specific sidebar,
     indexed as 3 + team color.
@@ -4532,10 +4532,10 @@ class DisplayObjective(ClientBoundPacket):
 
 @final
 @define
-class SetEntityMetadata(ClientBoundPacket):
+class SetEntityData(ClientBoundPacket):
     """Updates one or more metadata properties for an existing entity. (Server -> Client).
 
-    Initialize the SetEntityMetadata packet.
+    Initialize the SetEntityData packet.
 
     :param entity_id: The ID of the entity.
     :type entity_id: int
@@ -4564,10 +4564,10 @@ class SetEntityMetadata(ClientBoundPacket):
 
 @final
 @define
-class LinkEntities(ClientBoundPacket):
+class SetEntityLink(ClientBoundPacket):
     """Sent when an entity has been leashed to another entity. (Server -> Client).
 
-    Initialize the LinkEntities packet.
+    Initialize the SetEntityLink packet.
 
     :param attached_entity_id: Attached entity's EID.
     :type attached_entity_id: int
@@ -4598,13 +4598,13 @@ class LinkEntities(ClientBoundPacket):
 
 @final
 @define
-class SetEntityVelocity(ClientBoundPacket):
+class SetEntityMotion(ClientBoundPacket):
     """Set the speed of the entity. (Server -> Client).
 
     Velocity is in units of 1/8000 of a block per server tick (50ms); for example, -1343 would move
     (-1343 / 8000) = -0.167875 blocks per tick (or -3.3575 blocks per second).
 
-    Initialize the SetEntityVelocity packet.
+    Initialize the SetEntityMotion packet.
 
     :param entity_id: The ID of the entity.
     :type entity_id: int
@@ -4642,7 +4642,7 @@ class SetEntityVelocity(ClientBoundPacket):
 
     @classmethod
     def from_velocity(cls, entity_id: int, velocity: Vec3, tps: float = 20) -> Self:
-        """Create a SetEntityVelocity packet from a Vec3 velocity in blocks per second.
+        """Create a SetEntityMotion packet from a Vec3 velocity in blocks per second.
 
         The tick rate can be specified if it is not 20.
         """
@@ -4784,10 +4784,10 @@ class SetHealth(ClientBoundPacket):
 
 @final
 @define
-class UpdateObjectives(ClientBoundPacket):
+class SetObjective(ClientBoundPacket):
     """Sent to the client when it should create a new scoreboard objective or remove one. (Server -> Client).
 
-    Initialize the UpdateObjectives packet.
+    Initialize the SetObjective packet.
 
     :param objective_name: A unique name for the objective.
     :type objective_name: str
@@ -4917,10 +4917,10 @@ class TeamAction(IntEnum):
 
 @final
 @define
-class UpdateTeams(ClientBoundPacket):
+class SetPlayerTeam(ClientBoundPacket):
     """Creates and updates teams. (Server -> Client).
 
-    Initialize the UpdateTeams packet.
+    Initialize the SetPlayerTeam packet.
 
     :param team_name: The unique name for the team.
     :type team_name: str
@@ -5070,10 +5070,10 @@ class UpdateTeams(ClientBoundPacket):
 
 @final
 @define
-class UpdateScore(ClientBoundPacket):
+class SetScore(ClientBoundPacket):
     """Sent to the client when it should update a scoreboard item. (Server -> Client).
 
-    Initialize the UpdateScore packet.
+    Initialize the SetScore packet.
 
     :param entity_name: The name of the entity the objective applies to.
     :type entity_name: str
@@ -5208,10 +5208,10 @@ class SetSubtitleText(ClientBoundPacket):
 
 @final
 @define
-class UpdateTime(ClientBoundPacket):
+class SetTime(ClientBoundPacket):
     """Sent by the server to update the time for the client. (Server -> Client).
 
-    Initialize the UpdateTime packet.
+    Initialize the SetTime packet.
 
     :param world_age: In ticks; not changed by server commands.
     :type world_age: int
@@ -5268,10 +5268,10 @@ class SetTitleText(ClientBoundPacket):
 
 @final
 @define
-class SetTitleAnimationTimes(ClientBoundPacket):
+class SetTitlesAnimation(ClientBoundPacket):
     """Sent by the server to set the animation times for the title for the client. (Server -> Client).
 
-    Initialize the SetTitleAnimationTimes packet.
+    Initialize the SetTitlesAnimation packet.
 
     :param fade_in: Ticks to spend fading in.
     :type fade_in: int
@@ -5320,10 +5320,10 @@ class SoundCategories(IntEnum):
 
 @final
 @define
-class EntitySoundEffect(ClientBoundPacket):
+class SoundEntity(ClientBoundPacket):
     """Plays a sound effect from an entity, either by hardcoded ID or Identifier. (Server -> Client).
 
-    Initialize the EntitySoundEffect packet.
+    Initialize the SoundEntity packet.
 
     :param sound_id: Represents the Sound ID + 1. If the value is 0, the packet contains a sound specified by
     Identifier.
@@ -5401,10 +5401,10 @@ class EntitySoundEffect(ClientBoundPacket):
 
 @final
 @define
-class SoundEffect(ClientBoundPacket):
+class Sound(ClientBoundPacket):
     """Plays a sound effect at the given location, either by hardcoded ID or Identifier. (Server -> Client).
 
-    Initialize the SoundEffect packet.
+    Initialize the Sound packet.
 
     :param sound_id: Represents the Sound ID + 1. If the value is 0, the packet contains a sound specified by
     Identifier.
@@ -5578,10 +5578,10 @@ class StoreCookie(ClientBoundPacket):
 
 @final
 @define
-class SystemChatMessage(ClientBoundPacket):
+class SystemChat(ClientBoundPacket):
     """Sends the client a raw system message. (Server -> Client).
 
-    Initialize the SystemChatMessage packet.
+    Initialize the SystemChat packet.
 
     :param content: The content of the message.
     :type content: :class:`~mcproto.types.TextComponent`
@@ -5610,12 +5610,12 @@ class SystemChatMessage(ClientBoundPacket):
 
 @final
 @define
-class SetTabListHeaderAndFooter(ClientBoundPacket):
+class TabList(ClientBoundPacket):
     """Display additional information above/below the player list. (Server -> Client).
 
     It is never sent by the Notchian server.
 
-    Initialize the SetTabListHeaderAndFooter packet.
+    Initialize the TabList packet.
 
     :param header: To remove the header, send a empty text component: {"text":""}.
     :type header: :class:`~mcproto.types.TextComponent`
@@ -5644,10 +5644,10 @@ class SetTabListHeaderAndFooter(ClientBoundPacket):
 
 @final
 @define
-class TagQueryResponse(ClientBoundPacket):
+class TagQuery(ClientBoundPacket):
     """Sent in response to Query Block Entity Tag or Query Entity Tag. (Server -> Client).
 
-    Initialize the TagQueryResponse packet.
+    Initialize the TagQuery packet.
 
     :param transaction_id: Can be compared to the one sent in the original query packet.
     :type transaction_id: int
@@ -5676,7 +5676,7 @@ class TagQueryResponse(ClientBoundPacket):
 
 @final
 @define
-class PickupItem(ClientBoundPacket):
+class TakeItemEntity(ClientBoundPacket):
     """Sent by the server when someone picks up an item lying on the ground. (Server -> Client).
 
     Its sole purpose appears to be the animation of the item flying towards you. It doesn't destroy the entity in the
@@ -5685,7 +5685,7 @@ class PickupItem(ClientBoundPacket):
     any entity; it does not have to be a player. The collected entity also can be any entity, but the Notchian server
     only uses this for items, experience orbs, and the different varieties of arrows.
 
-    Initialize the PickupItem packet.
+    Initialize the TakeItemEntity packet.
 
     :param collected_entity_id: The ID of the collected entity.
     :type collected_entity_id: int
@@ -5770,10 +5770,10 @@ class TeleportEntity(ClientBoundPacket):
 
 @final
 @define
-class SetTickingState(ClientBoundPacket):
+class TickingState(ClientBoundPacket):
     """Used to adjust the ticking rate of the client, and whether it's frozen. (Server -> Client).
 
-    Initialize the SetTickingState packet.
+    Initialize the TickingState packet.
 
     :param tick_rate: The tick rate.
     :type tick_rate: float
@@ -5802,12 +5802,12 @@ class SetTickingState(ClientBoundPacket):
 
 @final
 @define
-class StepTick(ClientBoundPacket):
+class TickingStep(ClientBoundPacket):
     """Advances the client processing by the specified number of ticks. (Server -> Client).
 
     This packet has no effect unless client ticking is frozen.
 
-    Initialize the StepTick packet.
+    Initialize the TickingStep packet.
 
     :param tick_steps: The number of ticks to advance.
     :type tick_steps: int
@@ -6026,10 +6026,10 @@ class UpdateAttributes(ClientBoundPacket):
 
 @final
 @define
-class EntityEffect(ClientBoundPacket):
+class UpdateMobEffect(ClientBoundPacket):
     """Sets an effect on the given entity. (Server -> Client).
 
-    Initialize the EntityEffect packet.
+    Initialize the UpdateMobEffect packet.
 
     :param entity_id: The ID of the entity.
     :type entity_id: int
@@ -6108,7 +6108,7 @@ class UpdateRecipes(ClientBoundPacket):
     PACKET_ID: ClassVar[int] = 0x77
     GAME_STATE: ClassVar[GameState] = GameState.PLAY
 
-    recipes: list[Recipe]
+    recipes: list[BaseRecipe]
 
     @override
     def serialize_to(self, buf: Buffer) -> None:
@@ -6119,7 +6119,7 @@ class UpdateRecipes(ClientBoundPacket):
     @override
     @classmethod
     def _deserialize(cls, buf: Buffer, /) -> Self:
-        recipes = [Recipe.deserialize(buf) for _ in range(buf.read_varint())]
+        recipes = [BaseRecipe.deserialize(buf) for _ in range(buf.read_varint())]
         return cls(recipes=recipes)
 
 
@@ -6210,7 +6210,7 @@ class ProjectilePower(ClientBoundPacket):
 @final
 @define
 class CustomReportDetails(ClientBoundPacket):
-    """Text entries included in any crash report generated during connection to the server. (Client -> Server).
+    """Text entries included in any crash report generated during connection to the server. (Server -> Client).
 
     Initialize the CustomReportDetails packet.
 
@@ -6219,7 +6219,7 @@ class CustomReportDetails(ClientBoundPacket):
     """
 
     PACKET_ID: ClassVar[int] = 0x7A
-    GAME_STATE: ClassVar[GameState] = GameState.CONFIGURATION
+    GAME_STATE: ClassVar[GameState] = GameState.PLAY
 
     details: list[tuple[str, str]]
 
@@ -6245,17 +6245,19 @@ class CustomReportDetails(ClientBoundPacket):
 @final
 @define
 class ServerLinks(ClientBoundPacket):
-    """List of links that the Notchian client will display in the pause menu. (Client -> Server).
+    """List of links that the Notchian client will display in the pause menu. (Server -> Client).
 
     Initialize the ServerLinks packet.
 
     :param links: A list of links.
     :type links: list[
         tuple[:class:`~mcproto.packets.configuration.ServerLinkType` | :class:`~mcproto.types.TextComponent`, str]]
+
+    .. seealso:: :class:`~mcproto.packets.configuration.ServerLinkType`
     """
 
     PACKET_ID: ClassVar[int] = 0x7B
-    GAME_STATE: ClassVar[GameState] = GameState.CONFIGURATION
+    GAME_STATE: ClassVar[GameState] = GameState.PLAY
 
     links: list[tuple[ServerLinksType | TextComponent, str]]
 

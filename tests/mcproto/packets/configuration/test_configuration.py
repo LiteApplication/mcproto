@@ -3,22 +3,22 @@ from __future__ import annotations
 import re
 
 from mcproto.packets.configuration import (
-    AcknowledgeFinishConfiguration,
-    AddResourcePack,
     ClientInformation,
+    ClientboundCustomPayload,
+    ClientboundFinishConfiguration,
     ClientboundKeepAlive,
-    ClientboundPluginMessage,
     Disconnect,
-    FeatureFlags,
-    FinishConfiguration,
     Ping,
     Pong,
     RegistryData,
-    RemoveResourcePack,
-    ResourcePackResponse,
+    ResourcePack,
+    ResourcePackPop,
+    ResourcePackPush,
     ResourcePackResult,
+    ServerboundCustomPayload,
+    ServerboundFinishConfiguration,
     ServerboundKeepAlive,
-    ServerboundPluginMessage,
+    UpdateEnabledFeatures,
     UpdateTags,
 )
 from mcproto.types.chat import TextComponent
@@ -28,10 +28,10 @@ from mcproto.types.registry_tag import RegistryTag
 from mcproto.types.uuid import UUID
 from tests.helpers import ExcTest, gen_serializable_test
 
-# ClientboundPluginMessage
+# ClientboundCustomPayload
 gen_serializable_test(
     context=globals(),
-    cls=ClientboundPluginMessage,
+    cls=ClientboundCustomPayload,
     fields=[("channel", Identifier), ("data", bytes)],
     serialize_deserialize=[
         (
@@ -59,7 +59,7 @@ gen_serializable_test(
 # This test is here to ensure no data is serialized
 gen_serializable_test(
     context=globals(),
-    cls=FinishConfiguration,
+    cls=ClientboundFinishConfiguration,
     fields=[],
     serialize_deserialize=[
         (
@@ -113,10 +113,10 @@ gen_serializable_test(
     ],
 )
 
-# RemoveResourcePack
+# ResourcePackPop
 gen_serializable_test(
     context=globals(),
-    cls=RemoveResourcePack,
+    cls=ResourcePackPop,
     fields=[("uuid", UUID)],
     serialize_deserialize=[
         (
@@ -127,10 +127,10 @@ gen_serializable_test(
     ],
 )
 
-# AddResourcePack
+# ResourcePackPush
 gen_serializable_test(
     context=globals(),
-    cls=AddResourcePack,
+    cls=ResourcePackPush,
     fields=[
         ("uuid", UUID),
         ("url", str),
@@ -183,10 +183,10 @@ gen_serializable_test(
     ],
 )
 
-# FeatureFlags
+# UpdateEnabledFeatures
 gen_serializable_test(
     context=globals(),
-    cls=FeatureFlags,
+    cls=UpdateEnabledFeatures,
     fields=[("flags", "list[Identifier]")],
     serialize_deserialize=[
         (
@@ -293,10 +293,10 @@ gen_serializable_test(
         ),
     ],
 )
-# ServerboundPluginMessage
+# ServerboundCustomPayload
 gen_serializable_test(
     context=globals(),
-    cls=ServerboundPluginMessage,
+    cls=ServerboundCustomPayload,
     fields=[("channel", Identifier), ("data", bytes)],
     serialize_deserialize=[
         (
@@ -306,10 +306,10 @@ gen_serializable_test(
     ],
 )
 
-# AcknowledgeFinishConfiguration
+# FinishConfiguration
 gen_serializable_test(
     context=globals(),
-    cls=AcknowledgeFinishConfiguration,
+    cls=ServerboundFinishConfiguration,
     fields=[],
     serialize_deserialize=[
         (
@@ -346,10 +346,10 @@ gen_serializable_test(
     ],
 )
 
-# ResourcePackResponse
+# ResourcePack
 gen_serializable_test(
     context=globals(),
-    cls=ResourcePackResponse,
+    cls=ResourcePack,
     fields=[("uuid", UUID), ("result", ResourcePackResult)],
     serialize_deserialize=[
         (

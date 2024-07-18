@@ -15,7 +15,6 @@ gen_serializable_test(
 )
 
 
-
 def test_tag_str():
     """Test the __str__ method of the RegistryTag class."""
     tag = RegistryTag(Identifier("stone"), [1, 2, 3])

@@ -27,7 +27,7 @@ T_Packet = TypeVar("T_Packet", bound=Packet)
 # | Yes         | Packet ID     | 32-bit varint | Zlib compressed packet ID                                         |
 # | Yes         | Data          | byte array    | Zlib compressed packet data                                       |
 #
-# Compression should only be used when LoginSetCompression packet is received.
+# Compression should only be used when LoginCompression packet is received.
 # In this packet, a compression threshold will be sent by the server. This is
 # a number which specifies how large a packet can be at most (it's Data Length),
 # before enabling compression. If a packet is smaller, compression will not be
@@ -91,7 +91,7 @@ def _deserialize_packet(
     :param compressed:
         Boolean flag, if compression is enabled, it should be set to ``True``, ``False`` otherwise.
 
-        You can get this based on :class:`~mcproto.packets.login.login.LoginSetCompression` packet,
+        You can get this based on :class:`~mcproto.packets.login.login.LoginCompression` packet,
         which will contain a compression threshold value. This threshold is only useful when writing
         the packets, for reading, we don't care about the specific threshold, we only need to know
         whether compression is enabled or not. That is, if the threshold is set to a non-negative
@@ -123,7 +123,7 @@ def sync_write_packet(
     :param compression_threshold:
         A threshold packet length, whcih if crossed compression should be enabled.
 
-        You can get this number from :class:`~mcproto.packets.login.login.LoginSetCompression` packet.
+        You can get this number from :class:`~mcproto.packets.login.login.LoginCompression` packet.
         If this packet wasn't sent by the server, set this to -1 (default).
     """
     data_buf = _serialize_packet(packet, compression_threshold=compression_threshold)
@@ -143,7 +143,7 @@ async def async_write_packet(
     :param compression_threshold:
         A threshold packet length, whcih if crossed compression should be enabled.
 
-        You can get this number from :class:`~mcproto.packets.login.login.LoginSetCompression` packet.
+        You can get this number from :class:`~mcproto.packets.login.login.LoginCompression` packet.
         If this packet wasn't sent by the server, set this to -1 (default).
     """
     data_buf = _serialize_packet(packet, compression_threshold=compression_threshold)
@@ -167,7 +167,7 @@ def sync_read_packet(
     :param compression_threshold:
         A threshold packet length, whcih if crossed compression should be enabled.
 
-        You can get this number from :class:`~mcproto.packets.login.login.LoginSetCompression` packet.
+        You can get this number from :class:`~mcproto.packets.login.login.LoginCompression` packet.
         If this packet wasn't sent by the server, set this to -1 (default).
 
         Note that during reading, we don't actually need to know the specific threshold, just
@@ -201,7 +201,7 @@ async def async_read_packet(
     :param compression_threshold:
         A threshold packet length, whcih if crossed compression should be enabled.
 
-        You can get this number from :class:`~mcproto.packets.login.login.LoginSetCompression` packet.
+        You can get this number from :class:`~mcproto.packets.login.login.LoginCompression` packet.
         If this packet wasn't sent by the server, set this to -1 (default).
 
         Note that during reading, we don't actually need to know the specific threshold, just

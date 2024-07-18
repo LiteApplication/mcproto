@@ -34,7 +34,7 @@ class ToyClass(Serializable):
     def serialize_to(self, buf: Buffer):
         """Write the object to a buffer."""
         buf.write_varint(self.a)
-        buf.write_utf(self.b)           
+        buf.write_utf(self.b)
 
     @classmethod
     @override

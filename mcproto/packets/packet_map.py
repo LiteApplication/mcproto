@@ -26,10 +26,11 @@ else:
 __all__ = ["generate_packet_map"]
 
 MODULE_PATHS = {
-    GameState.HANDSHAKING: "mcproto.packets.handshaking",
+    GameState.HANDSHAKE: "mcproto.packets.handshaking",
     GameState.STATUS: "mcproto.packets.status",
     GameState.LOGIN: "mcproto.packets.login",
     GameState.PLAY: "mcproto.packets.play",
+    GameState.CONFIGURATION: "mcproto.packets.configuration",
 }
 
 

@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 from mcproto.packets.login.login import (
+    CustomQuery,
+    CustomQueryAnswer,
+    GameProfile,
     LoginAcknowledged,
+    LoginCompression,
     LoginDisconnect,
     LoginEncryptionRequest,
     LoginEncryptionResponse,
-    LoginPluginRequest,
-    LoginPluginResponse,
-    LoginSetCompression,
     LoginStart,
-    LoginSuccess,
 )
 from mcproto.packets.packet import InvalidPacketContentError
 from mcproto.types.chat import JSONTextComponent
@@ -76,10 +76,10 @@ gen_serializable_test(
 )
 
 
-# LoginSuccess
+# GameProfile
 gen_serializable_test(
     context=globals(),
-    cls=LoginSuccess,
+    cls=GameProfile,
     fields=[("uuid", UUID), ("username", str)],
     serialize_deserialize=[
         (
@@ -103,10 +103,10 @@ gen_serializable_test(
 )
 
 
-# LoginPluginRequest
+# CustomQuery
 gen_serializable_test(
     context=globals(),
-    cls=LoginPluginRequest,
+    cls=CustomQuery,
     fields=[("message_id", int), ("channel", str), ("data", bytes)],
     serialize_deserialize=[
         (
@@ -117,10 +117,10 @@ gen_serializable_test(
 )
 
 
-# LoginPluginResponse
+# CustomQueryAnswer
 gen_serializable_test(
     context=globals(),
-    cls=LoginPluginResponse,
+    cls=CustomQueryAnswer,
     fields=[("message_id", int), ("data", bytes)],
     serialize_deserialize=[
         (
@@ -130,10 +130,10 @@ gen_serializable_test(
     ],
 )
 
-# LoginSetCompression
+# LoginCompression
 gen_serializable_test(
     context=globals(),
-    cls=LoginSetCompression,
+    cls=LoginCompression,
     fields=[("threshold", int)],
     serialize_deserialize=[
         (

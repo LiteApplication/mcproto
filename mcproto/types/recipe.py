@@ -17,7 +17,7 @@ from mcproto.utils.abc import RequiredParamsABCMixin
 @final
 @define
 class Ingredient(MCType):
-    """Represents an item in a :class:`Recipe`.
+    """Represents an item in a :class:`BaseRecipe`.
 
     :param count: The count of the item.
     :type count: int
@@ -52,8 +52,8 @@ class Ingredient(MCType):
 
 
 @define
-class Recipe(MCType, RequiredParamsABCMixin):
-    """Represents a recipe in the :class:`~mcproto.packets.play.UpdateRecipes` packet.
+class BaseRecipe(MCType, RequiredParamsABCMixin):
+    """Represents a recipe in the :class:`~mcproto.packets.play.Recipe` packet.
 
     <https://wiki.vg/Protocol#Update_Recipes>
 
@@ -79,7 +79,7 @@ class Recipe(MCType, RequiredParamsABCMixin):
 
     @override
     @classmethod
-    def deserialize(cls, buf: Buffer) -> Recipe:
+    def deserialize(cls, buf: Buffer) -> BaseRecipe:
         recipe_id = Identifier.deserialize(buf)
         recipe_type = buf.read_varint()
         return ID_ASSOCIATION[recipe_type]._deserialize(buf, recipe_id)
@@ -87,7 +87,7 @@ class Recipe(MCType, RequiredParamsABCMixin):
 
 @final
 @define
-class ShapedRecipe(Recipe):
+class ShapedRecipe(BaseRecipe):
     """Represents a shaped recipe in the :class:`~mcproto.packets.play.UpdateRecipes` packet.
 
     Shaped crafting recipe. All items must be present in the same pattern (which may be flipped horizontally or
@@ -157,7 +157,7 @@ class ShapedRecipe(Recipe):
 
 @final
 @define
-class ShapelessRecipe(Recipe):
+class ShapelessRecipe(BaseRecipe):
     """Represents a shapeless recipe in the :class:`~mcproto.packets.play.UpdateRecipes` packet.
 
     Shapeless crafting recipe. Items can be anywhere in the grid.
@@ -207,7 +207,7 @@ class ShapelessRecipe(Recipe):
 
 
 @define
-class _SpecialRecipe(Recipe):
+class _SpecialRecipe(BaseRecipe):
     """Represents a recipe containing only the category.
 
     :param category: The category of the recipe. Building = 0, Redstone = 1, Equipment = 2, Misc = 3
@@ -369,7 +369,7 @@ class DecoratedPotRecipe(_SpecialRecipe):
 
 
 @define
-class SmeltingRecipe(Recipe):
+class SmeltingRecipe(BaseRecipe):
     """Smelting recipe.
 
     :param group: Used to group similar recipes together in the recipe book. Tag is present in recipe JSON.
@@ -458,7 +458,7 @@ class CampfireRecipe(SmeltingRecipe):
 
 @final
 @define
-class StoneCuttingRecipe(Recipe):
+class StoneCuttingRecipe(BaseRecipe):
     """Stone cutting recipe.
 
     :param group: Used to group similar recipes together in the recipe book. Tag is present in recipe JSON.
@@ -498,7 +498,7 @@ class StoneCuttingRecipe(Recipe):
 
 
 @define
-class SmithingTrimRecipe(Recipe):
+class SmithingTrimRecipe(BaseRecipe):
     """Smithing transform recipe.
 
     :param template: The smithing template.
@@ -578,7 +578,7 @@ class SmithingTransformRecipe(SmithingTrimRecipe):
         )
 
 
-ID_ASSOCIATION: dict[int, type[Recipe]] = {
+ID_ASSOCIATION: dict[int, type[BaseRecipe]] = {
     0: ShapedRecipe,
     1: ShapelessRecipe,
     2: ArmorDyeRecipe,

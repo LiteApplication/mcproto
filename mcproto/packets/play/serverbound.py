@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from enum import IntEnum
 import math
+from enum import IntEnum
 from typing import ClassVar, NamedTuple, cast, final
 
 from attrs import define, field, validators
@@ -16,10 +16,10 @@ from mcproto.types import FixedBitset, Identifier, Position, Slot, UUID, Vec3
 
 @final
 @define
-class ConfirmTeleportation(ServerBoundPacket):
+class AcceptTeleportation(ServerBoundPacket):
     """Sent by client as confirmation of Synchronize Player Position. (Client -> Server).
 
-    Initialize the ConfirmTeleportation packet.
+    Initialize the AcceptTeleportation packet.
 
     :param teleport_id: The ID given by the Synchronize Player Position packet.
     :type teleport_id: int
@@ -43,10 +43,10 @@ class ConfirmTeleportation(ServerBoundPacket):
 
 @final
 @define
-class QueryBlockEntityTag(ServerBoundPacket):
+class BlockEntityTagQuery(ServerBoundPacket):
     """Used when F3+I is pressed while looking at a block. (Client -> Server).
 
-    Initialize the QueryBlockEntityTag packet.
+    Initialize the BlockEntityTagQuery packet.
 
     :param transaction_id: An incremental ID so that the client can verify that the response matches.
     :type transaction_id: int
@@ -105,10 +105,10 @@ class ChangeDifficulty(ServerBoundPacket):
 
 @final
 @define
-class AcknowledgeMessage(ServerBoundPacket):
+class ChatAck(ServerBoundPacket):
     """Acknowledges receipt of a message from the server. (Client -> Server).
 
-    Initialize the AcknowledgeMessage packet.
+    Initialize the ChatAck packet.
 
     :param message_count: The message count sent by the server.
     :type message_count: int
@@ -159,10 +159,10 @@ class ChatCommand(ServerBoundPacket):
 
 @final
 @define
-class SignedChatCommand(ServerBoundPacket):
+class ChatCommandSigned(ServerBoundPacket):
     """Used to send a signed chat command to the server. (Client -> Server).
 
-    Initialize the SignedChatCommand packet.
+    Initialize the ChatCommandSigned packet.
 
     :param command: The command typed by the client.
     :type command: str
@@ -226,13 +226,13 @@ class SignedChatCommand(ServerBoundPacket):
 
 @final
 @define
-class ChatMessage(ServerBoundPacket):
+class Chat(ServerBoundPacket):
     """Used to send a chat message to the server. (Client -> Server).
 
     The server will broadcast a Player Chat Message packet with Chat Type minecraft:chat to all players that
     haven't disabled chat (including the player that sent the message).
 
-    Initialize the ChatMessage packet.
+    Initialize the Chat packet.
 
     :param message: The chat message.
     :type message: str
@@ -289,10 +289,12 @@ class ChatMessage(ServerBoundPacket):
         )
 
 
-class PlayerSession(ServerBoundPacket):
+@final
+@define
+class ChatSessionUpdate(ServerBoundPacket):
     """Sets the cryptographic ID of the player to create a session. (Client -> Server).
 
-    Initialize the PlayerSession packet.
+    Initialize the ChatSessionUpdate packet.
 
     :param session_id: The session ID.
     :type session_id: :class:`mcproto.types.UUID`
@@ -359,7 +361,7 @@ class ChunkBatchReceived(ServerBoundPacket):
         return cls(chunks_per_tick=chunks_per_tick)
 
 
-class ClientStatusAction(IntEnum):
+class ClientCommandAction(IntEnum):
     """An action for the Client Status Packet."""
 
     PERFORM_RESPAWN = 0
@@ -368,19 +370,19 @@ class ClientStatusAction(IntEnum):
 
 @final
 @define
-class ClientStatus(ServerBoundPacket):
+class ClientCommand(ServerBoundPacket):
     """Used to send client status to the server. (Client -> Server).
 
-    Initialize the ClientStatus packet.
+    Initialize the ClientCommand packet.
 
     :param action_id: The action ID.
-    :type action_id: :class:`ClientStatusAction`
+    :type action_id: :class:`ClientCommandAction`
     """
 
     PACKET_ID: ClassVar[int] = 0x09
     GAME_STATE: ClassVar[GameState] = GameState.PLAY
 
-    action_id: ClientStatusAction
+    action_id: ClientCommandAction
 
     @override
     def serialize_to(self, buf: Buffer) -> None:
@@ -389,7 +391,7 @@ class ClientStatus(ServerBoundPacket):
     @override
     @classmethod
     def _deserialize(cls, buf: Buffer, /) -> Self:
-        action_id = ClientStatusAction(buf.read_varint())
+        action_id = ClientCommandAction(buf.read_varint())
         return cls(action_id=action_id)
 
 
@@ -503,10 +505,10 @@ class ClientInformation(ServerBoundPacket):
 
 @final
 @define
-class CommandSuggestionsRequest(ServerBoundPacket):
+class CommandSuggestion(ServerBoundPacket):
     """Sent when the client needs to tab-complete a minecraft:ask_server suggestion type. (Client -> Server).
 
-    Initialize the CommandSuggestionsRequest packet.
+    Initialize the CommandSuggestion packet.
 
     :param transaction_id: The id of the transaction that the server will send back to the client in the response of
     this packet.
@@ -537,12 +539,12 @@ class CommandSuggestionsRequest(ServerBoundPacket):
 
 @final
 @define
-class AcknowledgeConfiguration(ServerBoundPacket):
+class ConfigurationAcknowledged(ServerBoundPacket):
     """Sent by the client upon receiving a Start Configuration packet from the server. (Client -> Server).
 
     This packet switches the connection state to configuration.
 
-    Initialize the AcknowledgeConfiguration packet.
+    Initialize the ConfigurationAcknowledged packet.
     """
 
     PACKET_ID: ClassVar[int] = 0x0C
@@ -560,12 +562,12 @@ class AcknowledgeConfiguration(ServerBoundPacket):
 
 @final
 @define
-class ClickContainerButton(ServerBoundPacket):
+class ContainerButtonClick(ServerBoundPacket):
     """Used when clicking on window buttons. (Client -> Server).
 
     Until 1.14, this was only used by enchantment tables.
 
-    Initialize the ClickContainerButton packet.
+    Initialize the ContainerButtonClick packet.
 
     :param window_id: The ID of the window sent by Open Screen.
     :type window_id: int
@@ -608,10 +610,10 @@ class ClickMode(IntEnum):
 
 @final
 @define
-class ClickContainer(ServerBoundPacket):
+class ContainerClick(ServerBoundPacket):
     """Sent by the client when the player clicks on a slot in a window. (Client -> Server).
 
-    Initialize the ClickContainer packet.
+    Initialize the ContainerClick packet.
 
     :param window_id: The ID of the window which was clicked. 0 for player inventory.
     :type window_id: int
@@ -681,10 +683,10 @@ class ClickContainer(ServerBoundPacket):
 
 @final
 @define
-class CloseContainer(ServerBoundPacket):
+class ContainerClose(ServerBoundPacket):
     """Sent by the client when closing a window. (Client -> Server).
 
-    Initialize the CloseContainer packet.
+    Initialize the ContainerClose packet.
 
     :param window_id: The ID of the window that was closed. 0 for player inventory.
     :type window_id: int
@@ -708,10 +710,10 @@ class CloseContainer(ServerBoundPacket):
 
 @final
 @define
-class ChangeContainerSlotState(ServerBoundPacket):
+class ContainerSlotStateChanged(ServerBoundPacket):
     """Sent by the client when toggling the state of a Crafter. (Client -> Server).
 
-    Initialize the ChangeContainerSlotState packet.
+    Initialize the ContainerSlotStateChanged packet.
 
     :param slot_id: The ID of the slot that was changed.
     :type slot_id: int
@@ -779,10 +781,10 @@ class CookieResponse(ServerBoundPacket):
 
 @final
 @define
-class ServerboundPluginMessage(ServerBoundPacket):
+class CustomPayload(ServerBoundPacket):
     """Mods and plugins can use this to send their data. (Client -> Server).
 
-    Initialize the ServerboundPluginMessage packet.
+    Initialize the ServerboundCustomPayload packet.
 
     :param channel: The name of the plugin channel used to send the data.
     :type channel: str
@@ -879,10 +881,10 @@ class EditBook(ServerBoundPacket):
 
 @final
 @define
-class QueryEntityTag(ServerBoundPacket):
+class EntityTagQuery(ServerBoundPacket):
     """Used when F3+I is pressed while looking at an entity. (Client -> Server).
 
-    Initialize the QueryEntityTag packet.
+    Initialize the EntityTagQuery packet.
 
     :param transaction_id: An incremental ID so that the client can verify that the response matches.
     :type transaction_id: int
@@ -1034,7 +1036,7 @@ class JigsawGenerate(ServerBoundPacket):
 
 @final
 @define
-class ServerboundKeepAlive(ServerBoundPacket):
+class KeepAlive(ServerBoundPacket):
     """Keep the connection alive. (Client -> Server).
 
     The server will frequently send out a keep-alive, each containing a random ID. The client must respond with the
@@ -1094,10 +1096,10 @@ class LockDifficulty(ServerBoundPacket):
 
 @final
 @define
-class SetPlayerPosition(ServerBoundPacket):
+class MovePlayerPos(ServerBoundPacket):
     """Updates the player's XYZ position on the server. (Client -> Server).
 
-    Initialize the SetPlayerPosition packet.
+    Initialize the MovePlayerPos packet.
 
     :param feet_position: The absolute feet position.
     :type feet_position: :class:`Vec3`
@@ -1127,7 +1129,7 @@ class SetPlayerPosition(ServerBoundPacket):
 
     @classmethod
     def from_position(cls, position: Vec3, on_ground: bool) -> Self:
-        """Create a SetPlayerPosition packet from a :class:`Position` instance.
+        """Create a MovePlayerPos packet from a :class:`Position` instance.
 
         .. note:: The y value of the position is the head position, so the feet position is calculated by subtracting
         1.62 from the y value.
@@ -1135,15 +1137,15 @@ class SetPlayerPosition(ServerBoundPacket):
         return cls(feet_position=position - cls.EYES_POSITION, on_ground=on_ground)
 
     def to_position(self) -> Vec3:
-        """Convert the SetPlayerPosition packet to a :class:`Position` instance (head position)."""
+        """Convert the MovePlayerPos packet to a :class:`Position` instance (head position)."""
         return self.feet_position + self.EYES_POSITION
 
 
 @define
-class SetPlayerPositionAndRotation(ServerBoundPacket):
+class MovePlayerPosRot(ServerBoundPacket):
     """A combination of Move Player Rotation and Move Player Position. (Client -> Server).
 
-    Initialize the SetPlayerPositionAndRotation packet.
+    Initialize the MovePlayerPosRot packet.
 
     :param feet_position: The absolute feet position.
     :type feet_position: :class:`Vec3`
@@ -1192,7 +1194,7 @@ class SetPlayerPositionAndRotation(ServerBoundPacket):
 
     @classmethod
     def from_position(cls, position: Vec3, yaw: float, pitch: float, on_ground: bool) -> Self:
-        """Create a SetPlayerPositionAndRotation packet from a :class:`Position` instance.
+        """Create a MovePlayerPosRot packet from a :class:`Position` instance.
 
         .. note:: The y value of the position is the head position, so the feet position is calculated by subtracting
         1.62.
@@ -1200,16 +1202,16 @@ class SetPlayerPositionAndRotation(ServerBoundPacket):
         return cls(feet_position=position - cls.EYES_POSITION, yaw=yaw, pitch=pitch, on_ground=on_ground)
 
     def to_position(self) -> Vec3:
-        """Convert the SetPlayerPosition packet to a :class:`Position` instance (head position)."""
+        """Convert the MovePlayerPos packet to a :class:`Position` instance (head position)."""
         return self.feet_position + self.EYES_POSITION
 
 
 @final
 @define
-class SetPlayerRotation(ServerBoundPacket):
+class MovePlayerRot(ServerBoundPacket):
     """Updates the direction the player is looking in. (Client -> Server).
 
-    Initialize the SetPlayerRotation packet.
+    Initialize the MovePlayerRot packet.
 
     :param yaw: The absolute rotation on the X axis, in degrees.
     :type yaw: float
@@ -1252,10 +1254,10 @@ class SetPlayerRotation(ServerBoundPacket):
 
 @final
 @define
-class SetPlayerOnGround(ServerBoundPacket):
+class MovePlayerStatusOnly(ServerBoundPacket):
     """Indicates whether the player is on ground (walking/swimming), or airborne (jumping/falling). (Client -> Server).
 
-    Initialize the SetPlayerOnGround packet.
+    Initialize the MovePlayerStatusOnly packet.
 
     :param on_ground: Whether the client is on the ground.
     :type on_ground: bool
@@ -1671,10 +1673,10 @@ class RecipeBookType(IntEnum):
 
 @final
 @define
-class ChangeRecipeBookSettings(ServerBoundPacket):
+class RecipeBookChangeSettings(ServerBoundPacket):
     """Replaces Recipe Book Data, type 1. (Client -> Server).
 
-    Initialize the ChangeRecipeBookSettings packet.
+    Initialize the RecipeBookChangeSettings packet.
 
     :param book_id: The type of recipe book.
     :type book_id: RecipeBookType
@@ -1708,10 +1710,10 @@ class ChangeRecipeBookSettings(ServerBoundPacket):
 
 @final
 @define
-class SetSeenRecipe(ServerBoundPacket):
+class RecipeBookSeenRecipe(ServerBoundPacket):
     """Sent when recipe is first seen in recipe book. Replaces Recipe Book Data, type 0. (Client -> Server).
 
-    Initialize the SetSeenRecipe packet.
+    Initialize the RecipeBookSeenRecipe packet.
 
     :param recipe_id: The ID of the recipe.
     :type recipe_id: :class:`~mcproto.types.Identifier`
@@ -1763,7 +1765,7 @@ class RenameItem(ServerBoundPacket):
         return cls(item_name=item_name)
 
 
-class ResourcePackResponseResult(IntEnum):
+class ResourcePackResult(IntEnum):
     """The result of a resource pack response."""
 
     SUCCESSFULLY_DOWNLOADED = 0
@@ -1777,22 +1779,22 @@ class ResourcePackResponseResult(IntEnum):
 
 @final
 @define
-class ResourcePackResponse(ServerBoundPacket):
+class ResourcePack(ServerBoundPacket):
     """Sent by the client in response to a resource pack request. (Client -> Server).
 
-    Initialize the ResourcePackResponse packet.
+    Initialize the ResourcePack packet.
 
     :param uuid: The unique identifier of the resource pack received in the Add Resource Pack (play) request.
     :type uuid: UUID
     :param result: The result of the resource pack request.
-    :type result: ResourcePackResponseResult
+    :type result: ResourcePackResult
     """
 
     PACKET_ID: ClassVar[int] = 0x2B
     GAME_STATE: ClassVar[GameState] = GameState.PLAY
 
     uuid: UUID
-    result: ResourcePackResponseResult
+    result: ResourcePackResult
 
     @override
     def serialize_to(self, buf: Buffer) -> None:
@@ -1803,7 +1805,7 @@ class ResourcePackResponse(ServerBoundPacket):
     @classmethod
     def _deserialize(cls, buf: Buffer, /) -> Self:
         uuid = UUID.deserialize(buf)
-        result = ResourcePackResponseResult(buf.read_varint())
+        result = ResourcePackResult(buf.read_varint())
         return cls(uuid=uuid, result=result)
 
 
@@ -1881,10 +1883,10 @@ class SelectTrade(ServerBoundPacket):
 
 @final
 @define
-class SetBeaconEffect(ServerBoundPacket):
+class SetBeacon(ServerBoundPacket):
     """Changes the effect of the current beacon. (Client -> Server).
 
-    Initialize the SetBeaconEffect packet.
+    Initialize the SetBeacon packet.
 
     :param primary_effect: The primary effect, if any.
     :type primary_effect: int | None
@@ -1916,10 +1918,10 @@ class SetBeaconEffect(ServerBoundPacket):
 
 @final
 @define
-class SetHeldItem(ServerBoundPacket):
+class SetCarriedItem(ServerBoundPacket):
     """Sent when the player changes the slot selection. (Client -> Server).
 
-    Initialize the SetHeldItem packet.
+    Initialize the SetCarriedItem packet.
 
     :param slot: The slot which the player has selected (0-8).
     :type slot: int
@@ -1951,10 +1953,10 @@ class CommandBlockMode(IntEnum):
 
 @final
 @define
-class ProgramCommandBlock(ServerBoundPacket):
+class SetCommandBlock(ServerBoundPacket):
     """Programs a command block. (Client -> Server).
 
-    Initialize the ProgramCommandBlock packet.
+    Initialize the SetCommandBlock packet.
 
     :param location: The location of the command block.
     :type location: Position
@@ -2014,10 +2016,10 @@ class ProgramCommandBlock(ServerBoundPacket):
 
 @final
 @define
-class ProgramCommandBlockMinecart(ServerBoundPacket):
+class SetCommandMinecart(ServerBoundPacket):
     """Programs a command block minecart. (Client -> Server).
 
-    Initialize the ProgramCommandBlockMinecart packet.
+    Initialize the SetCommandMinecart packet.
 
     :param entity_id: The entity ID of the command block minecart.
     :type entity_id: int
@@ -2081,7 +2083,7 @@ class SetCreativeModeSlot(ServerBoundPacket):
         return cls(slot=slot, clicked_item=clicked_item)
 
 
-class StructureBlockAction(IntEnum):
+class StructureBlockEvent(IntEnum):
     """The action to perform on a structure block."""
 
     UPDATE_DATA = 0
@@ -2118,10 +2120,10 @@ class StructureBlockRotation(IntEnum):
 
 @final
 @define
-class ProgramJigsawBlock(ServerBoundPacket):
+class SetJigsawBlock(ServerBoundPacket):
     """Sent when Done is pressed on the Jigsaw Block interface. (Client -> Server).
 
-    Initialize the ProgramJigsawBlock packet.
+    Initialize the SetJigsawBlock packet.
 
     :param location: The block entity location.
     :type location: Position
@@ -2189,15 +2191,15 @@ class ProgramJigsawBlock(ServerBoundPacket):
 
 @final
 @define
-class ProgramStructureBlock(ServerBoundPacket):
+class SetStructureBlock(ServerBoundPacket):
     """Sent when a structure block is programmed. (Client -> Server).
 
-    Initialize the ProgramStructureBlock packet.
+    Initialize the SetStructureBlock packet.
 
     :param location: The block entity location.
     :type location: Position
     :param action: The action to perform on the structure block.
-    :type action: StructureBlockAction
+    :type action: StructureBlockEvent
     :param mode: The mode of the structure block.
     :type mode: StructureBlockMode
     :param name: The name of the structure block.
@@ -2237,7 +2239,7 @@ class ProgramStructureBlock(ServerBoundPacket):
     GAME_STATE: ClassVar[GameState] = GameState.PLAY
 
     location: Position = field()
-    action: StructureBlockAction = field()
+    action: StructureBlockEvent = field()
     mode: StructureBlockMode = field()
     name: str = field()
     offset_x: int = field(validator=[validators.ge(-48), validators.le(48)])
@@ -2282,7 +2284,7 @@ class ProgramStructureBlock(ServerBoundPacket):
     @classmethod
     def _deserialize(cls, buf: Buffer, /) -> Self:
         location = Position.deserialize(buf)
-        action = StructureBlockAction(buf.read_varint())
+        action = StructureBlockEvent(buf.read_varint())
         mode = StructureBlockMode(buf.read_varint())
         name = buf.read_utf()
         offset_x = buf.read_value(StructFormat.BYTE)
@@ -2328,10 +2330,10 @@ validators.max_len(384)
 
 @final
 @define
-class UpdateSign(ServerBoundPacket):
+class SignUpdate(ServerBoundPacket):
     """Sent when the player updates a sign. (Client -> Server).
 
-    Initialize the UpdateSign packet.
+    Initialize the SignUpdate packet.
 
     :param location: The block coordinates of the sign.
     :type location: Position
@@ -2387,10 +2389,10 @@ class UpdateSign(ServerBoundPacket):
 
 @final
 @define
-class SwingArm(ServerBoundPacket):
+class Swing(ServerBoundPacket):
     """Sent when the player's arm swings. (Client -> Server).
 
-    Initialize the SwingArm packet.
+    Initialize the Swing packet.
 
     :param hand: The hand used for the animation.
     :type hand: Hand

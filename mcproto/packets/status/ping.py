@@ -15,7 +15,7 @@ __all__ = ["PingPong"]
 @final
 @define
 class PingPong(ClientBoundPacket, ServerBoundPacket):
-    """Ping request/Pong response (Server <-> Client).
+    """Ping request/Pong response (Client <-> Server).
 
     Initialize the PingPong packet.
 
